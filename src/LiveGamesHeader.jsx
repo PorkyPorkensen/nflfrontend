@@ -38,8 +38,8 @@ export default function LiveGamesHeader() {
     // Fetch live games - try alternative endpoints
     const tryScoreboardAPI = async () => {
       const endpoints = [
-        `http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${week}&seasontype=2`,
-        `http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${new Date().toISOString().slice(0, 10).replace(/-/g, '')}&week=${week}`
+        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${week}&seasontype=2`,
+        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${new Date().toISOString().slice(0, 10).replace(/-/g, '')}&week=${week}`
       ];
 
       for (const endpoint of endpoints) {
