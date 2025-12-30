@@ -8,9 +8,9 @@ const isLocalhost = window.location.hostname === 'localhost';
 // API Base URLs
 const API_BASE_URLS = {
   // Local Express.js backend (using the /backend folder)
-  local: 'http://prod.eba-gs6tvmnq.us-east-1.elasticbeanstalk.com',
+  local: 'https://prod.eba-gs6tvmnq.us-east-1.elasticbeanstalk.com/',
   // Production AWS Elastic Beanstalk backend
-  production: 'http://prod.eba-gs6tvmnq.us-east-1.elasticbeanstalk.com',
+  production: 'https://prod.eba-gs6tvmnq.us-east-1.elasticbeanstalk.com/',
 };
 
 // Choose which backend to use
