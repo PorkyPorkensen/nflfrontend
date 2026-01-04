@@ -10,7 +10,7 @@ const BracketSubmission = ({ bracketData, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(true);
   const { currentUser, getIdToken } = useAuth();
 
-  // Check for existing brackets when component mounts
+  // Check for existing brackets when component mounts or modal opens
   useEffect(() => {
     const checkExistingBrackets = async () => {
       if (!currentUser) {
@@ -19,6 +19,7 @@ const BracketSubmission = ({ bracketData, onClose, onSuccess }) => {
       }
 
       try {
+        setLoading(true);
         const token = await getIdToken();
         const response = await makeAuthenticatedRequest(
           API_ENDPOINTS.userBrackets,
@@ -38,7 +39,7 @@ const BracketSubmission = ({ bracketData, onClose, onSuccess }) => {
     };
 
     checkExistingBrackets();
-  }, [currentUser, getIdToken]);
+  }, [currentUser, getIdToken, bracketData]);
 
   // Generate random bracket name
   const generateRandomName = () => {
