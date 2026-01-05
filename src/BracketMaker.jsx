@@ -442,8 +442,13 @@ export default function BracketMaker() {
   const initializeBracket = () => {
     const newBracket = { ...bracketState };
     
+    // Log team seeds for debugging
+    console.log('AFC Teams for bracket:', afcTeams.map(t => `${t.abbreviation} (Seed ${t.playoffSeed})`));
+    console.log('NFC Teams for bracket:', nfcTeams.map(t => `${t.abbreviation} (Seed ${t.playoffSeed})`));
+    
     // AFC Wild Card matchups - fixed based on seeding
     if (afcTeams.length >= 7) {
+      // Seed 1 gets bye, wildcard games are 2v7, 3v6, 4v5
       newBracket.afc.wildCard[0] = { home: afcTeams[1], away: afcTeams[6], winner: null }; // 2v7
       newBracket.afc.wildCard[1] = { home: afcTeams[2], away: afcTeams[5], winner: null }; // 3v6
       newBracket.afc.wildCard[2] = { home: afcTeams[3], away: afcTeams[4], winner: null }; // 4v5
@@ -451,10 +456,18 @@ export default function BracketMaker() {
       // AFC Divisional - #1 seed awaits lowest wild card winner
       newBracket.afc.divisional[0] = { home: afcTeams[0], away: null, winner: null }; // #1 seed waits
       newBracket.afc.divisional[1] = { home: null, away: null, winner: null }; // Other matchup TBD
+      
+      console.log('AFC bracket initialized:', {
+        seed1: afcTeams[0].abbreviation,
+        seed2v7: `${afcTeams[1].abbreviation} vs ${afcTeams[6].abbreviation}`,
+        seed3v6: `${afcTeams[2].abbreviation} vs ${afcTeams[5].abbreviation}`,
+        seed4v5: `${afcTeams[3].abbreviation} vs ${afcTeams[4].abbreviation}`
+      });
     }
     
     // NFC Wild Card matchups - fixed based on seeding
     if (nfcTeams.length >= 7) {
+      // Seed 1 gets bye, wildcard games are 2v7, 3v6, 4v5
       newBracket.nfc.wildCard[0] = { home: nfcTeams[1], away: nfcTeams[6], winner: null };
       newBracket.nfc.wildCard[1] = { home: nfcTeams[2], away: nfcTeams[5], winner: null };
       newBracket.nfc.wildCard[2] = { home: nfcTeams[3], away: nfcTeams[4], winner: null };
@@ -462,6 +475,13 @@ export default function BracketMaker() {
       // NFC Divisional - #1 seed awaits lowest wild card winner  
       newBracket.nfc.divisional[0] = { home: nfcTeams[0], away: null, winner: null }; // #1 seed waits
       newBracket.nfc.divisional[1] = { home: null, away: null, winner: null }; // Other matchup TBD
+      
+      console.log('NFC bracket initialized:', {
+        seed1: nfcTeams[0].abbreviation,
+        seed2v7: `${nfcTeams[1].abbreviation} vs ${nfcTeams[6].abbreviation}`,
+        seed3v6: `${nfcTeams[2].abbreviation} vs ${nfcTeams[5].abbreviation}`,
+        seed4v5: `${nfcTeams[3].abbreviation} vs ${nfcTeams[4].abbreviation}`
+      });
     }
     
     setBracketState(newBracket);
