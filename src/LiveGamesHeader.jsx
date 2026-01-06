@@ -168,7 +168,7 @@ export default function LiveGamesHeader() {
   return (
     <div className="p-6 w-full max-w-6xl mx-auto mb-8">
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-800 mb-3 font-oswald">Week {week} Games</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-3 font-oswald">Scores</h2>
         
         {/* Week Navigation */}
         <div className="flex items-center justify-between">
