@@ -422,20 +422,6 @@ const Leaderboard = () => {
             <p className="text-blue-700">8 points for correct pick</p>
           </div>
         </div>
-        
-        {/* Process Seeded Results Button */}
-        <div className="mt-6 text-center">
-          <button
-            onClick={processSeededResults}
-            disabled={processingResults}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-          >
-            {processingResults ? 'Processing...' : 'Process Seeded Results'}
-          </button>
-          <p className="text-xs text-blue-600 mt-2">
-            Run the seed script first, then click here to calculate scores based on seeded game results.
-          </p>
-        </div>
       </div>
     </div>
   );

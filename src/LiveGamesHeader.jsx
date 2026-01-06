@@ -4,11 +4,38 @@ import GameDetailsModal from "./components/GameDetailsModal";
 export default function LiveGamesHeader() {
   const [liveGames, setLiveGames] = useState([]);
   const [week, setWeek] = useState(() => {
-    // Calculate current NFL week (season starts around week 36 of the year)
+    // Calculate current NFL week
     const now = new Date();
-    const seasonStart = new Date(now.getFullYear(), 8, 1); // September 1st
-    const weeksDiff = Math.floor((now - seasonStart) / (7 * 24 * 60 * 60 * 1000));
-    return Math.max(1, Math.min(18, weeksDiff + 1)); // NFL has 18 weeks
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed
+    
+    // Determine the season year (if we're in Jan-Feb, we're in the previous year's season)
+    const seasonYear = currentMonth < 2 ? currentYear - 1 : currentYear;
+    
+    // NFL season typically starts on the Thursday after Labor Day
+    // Labor Day is the first Monday in September
+    // For simplicity, we'll calculate from September 1st
+    const september1 = new Date(seasonYear, 8, 1);
+    
+    // Find the first Thursday of September (approximate season start)
+    let seasonStart = new Date(september1);
+    while (seasonStart.getDay() !== 4) { // 4 = Thursday
+      seasonStart.setDate(seasonStart.getDate() + 1);
+    }
+    
+    // For dates in January/February, use the current date
+    // For dates after September, use seasonStart
+    const referenceDate = currentMonth < 2 ? new Date(currentYear, currentMonth, now.getDate()) : seasonStart;
+    
+    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+    const weeksDiff = Math.floor((now - seasonStart) / msPerWeek) + 1;
+    
+    // NFL playoffs start around week 18-19 (late January)
+    // Regular season is weeks 1-18
+    const calculatedWeek = Math.max(1, Math.min(22, weeksDiff)); // Allow up to week 22 for playoffs
+    
+    console.log('Week calculation:', { now, seasonYear, seasonStart, weeksDiff, calculatedWeek });
+    return calculatedWeek;
   });
   const [showAllGames, setShowAllGames] = useState(false);
   const [screenSize, setScreenSize] = useState('mobile');

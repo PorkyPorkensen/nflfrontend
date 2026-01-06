@@ -128,7 +128,7 @@ function GameDetailsContent({ gameDetails }) {
   return (
     <div className="pt-12 px-4 pb-6 md:p-6 mt-4">
       {/* Game Header */}
-      <div className="mb-6 pr-2 md:pr-8">
+      <div className="mb-12 mt-4 pr-2 md:pr-8">
         <div className="flex flex-col md:flex-row items-center justify-center mb-4 space-y-4 md:space-y-0">
           {/* Away Team */}
           <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto">
@@ -191,7 +191,7 @@ function GameDetailsContent({ gameDetails }) {
 
         {/* Team Stats */}
         {boxscore?.teams && Array.isArray(boxscore.teams) && boxscore.teams.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-300">
             <h3 className="text-lg font-semibold mb-3 font-oswald">Team Stats</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -232,7 +232,7 @@ function GameDetailsContent({ gameDetails }) {
 
         {/* Game Information */}
         {gameInfo && (
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-300">
             <h3 className="text-lg font-semibold mb-3">Game Information</h3>
             <div className="space-y-2 text-sm">
               {gameInfo.attendance && (
@@ -360,7 +360,7 @@ function GameDetailsContent({ gameDetails }) {
 
       {/* Recent News */}
       {news?.articles && Array.isArray(news.articles) && news.articles.length > 0 && (
-        <div className="mt-6 bg-gray-50 rounded-lg p-4">
+        <div className="mt-6 bg-gray-50 rounded-lg p-4  border border-gray-300">
           <h3 className="text-lg font-semibold mb-3">Recent News</h3>
           <div className="space-y-3">
             {news.articles.slice(0, 3).map((article, idx) => (

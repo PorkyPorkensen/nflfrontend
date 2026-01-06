@@ -236,7 +236,7 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
                 {predictions.afc?.wildCard?.map((game, idx) => (
                   game?.winner && (
                     <div key={idx} className="flex justify-center bg-blue-50 p-3 rounded-lg">
-                      <img src={game.winner.logo} alt={game.winner.name} className="w-10 h-10" />
+                      <img src={game.winner.logo} alt={game.winner.name} className="w-8 h-8" />
                     </div>
                   )
                 )) || <div className="col-span-2 bg-gray-200 p-3 rounded-lg text-gray-500 text-sm text-center">No picks made</div>}
@@ -248,7 +248,7 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
                 {predictions.nfc?.wildCard?.map((game, idx) => (
                   game?.winner && (
                     <div key={idx} className="flex justify-center bg-red-50 p-3 rounded-lg">
-                      <img src={game.winner.logo} alt={game.winner.name} className="w-10 h-10" />
+                      <img src={game.winner.logo} alt={game.winner.name} className="w-8 h-8" />
                     </div>
                   )
                 )) || <div className="col-span-2 bg-gray-200 p-3 rounded-lg text-gray-500 text-sm text-center">No picks made</div>}
@@ -291,7 +291,6 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
   if (brackets.length === 0) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">My Brackets</h2>
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <div className="text-6xl mb-4">📋</div>
           <h3 className="text-xl font-semibold text-gray-600 mb-2">No Brackets Yet</h3>
@@ -334,14 +333,14 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
                     <button
                       onClick={() => deleteBracket(bracket.id, bracket.bracket_name || 'Unnamed Bracket')}
                       disabled={deletingBracket === bracket.id}
-                      className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                      className="bg-red-600 hover:bg-red-900 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                       title="Delete this bracket"
                     >
                       {deletingBracket === bracket.id ? '⏳' : '🗑️'}
                     </button>
                     
                     {/* Score Badge */}
-                    {bracket.total_score !== null && (
+                    {bracket.total_score !== null && bracket.total_score > 0 && (
                       <div className="bg-blue-100 text-blue-800 px-2 py-1 sm:px-3 rounded-full font-semibold text-xs sm:text-sm">
                         <span className="hidden sm:inline">Score: </span>{bracket.total_score}<span className="hidden sm:inline"> pts</span>
                       </div>

@@ -210,21 +210,7 @@ export default function Header() {
               Leaderboard
             </NavLink>
             {/* Admin link for mobile - only show for admin users */}
-            {currentUser?.email === 'gatorgoldrs@gmail.com' && (
-              <NavLink
-                to="/admin"
-                onClick={closeMenu}
-                className={({ isActive }) =>
-                  `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
-                    isActive
-                      ? 'bg-red-100 text-red-700 border border-red-200'
-                      : 'text-red-600 hover:text-red-800 hover:bg-red-50'
-                  }`
-                }
-              >
-                Admin
-              </NavLink>
-            )}
+            {/* Removed admin path - no longer needed */}
             
             {/* Mobile Auth Section */}
             <div className="border-t border-gray-200 pt-3 mt-3">

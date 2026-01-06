@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Confetti from "react-confetti";
+import html2canvas from "html2canvas";
 import BracketSubmission from "./BracketSubmission";
 import UserBrackets from "./UserBrackets";
 import { useAuth } from './firebase/AuthContext';
@@ -22,17 +23,116 @@ const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBr
     return null;
   }
 
+  const handleDownloadBracket = async () => {
+    try {
+      // Try to capture both celebration and bracket summary together
+      const celebrationElement = document.getElementById('bracket-celebration-capture');
+      
+      if (!celebrationElement) {
+        alert('Could not find bracket content to download');
+        return;
+      }
+      
+      // Create screenshot version with full team names - clean layout without boxes
+      const screenshotBracket = document.createElement('div');
+      screenshotBracket.id = 'bracket-summary-screenshot';
+      screenshotBracket.className = 'bg-gray-50 rounded-lg p-6 mt-4';
+      screenshotBracket.innerHTML = `
+        <h4 class="text-lg font-semibold text-gray-800 mb-4 text-center font-oswald">Your Bracket Predictions</h4>
+        
+        <div class="flex justify-center mb-6">
+          <div class="bg-yellow-100 border-2 border-yellow-300 rounded-lg p-3 w-3/5 text-center">
+            <div class="text-xs font-semibold text-yellow-800 mb-2 font-roboto-condensed">SUPER BOWL CHAMPION</div>
+            <div class="text-2xl font-bold text-yellow-900 mb-4">${champion.name}</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6 mb-6">
+          <div class="text-center">
+            <div class="text-xs font-semibold text-gray-600 mb-2">AFC CHAMPION</div>
+            <div class="text-lg font-semibold text-gray-800">${bracketState.superBowl.afc ? bracketState.superBowl.afc.name : 'TBD'}</div>
+          </div>
+          <div class="text-center">
+            <div class="text-xs font-semibold text-gray-600 mb-2">NFC CHAMPION</div>
+            <div class="text-lg font-semibold text-gray-800">${bracketState.superBowl.nfc ? bracketState.superBowl.nfc.name : 'TBD'}</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <div class="text-center">
+            <div class="text-xs font-semibold text-gray-600 mb-3">AFC WILD CARD WINNERS</div>
+            <div class="space-y-2">
+              ${bracketState.afc.wildCard.map((game, idx) => `
+                <div class="text-sm font-semibold text-gray-700">${game.winner ? game.winner.name : 'TBD'}</div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="text-center">
+            <div class="text-xs font-semibold text-gray-600 mb-3">NFC WILD CARD WINNERS</div>
+            <div class="space-y-2">
+              ${bracketState.nfc.wildCard.map((game, idx) => `
+                <div class="text-sm font-semibold text-gray-700">${game.winner ? game.winner.name : 'TBD'}</div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Create a narrower wrapper to make it portrait-oriented
+      const wrapper = document.createElement('div');
+      wrapper.style.backgroundColor = '#ffffff';
+      wrapper.style.padding = '20px';
+      wrapper.style.width = '600px';
+      wrapper.style.boxSizing = 'border-box';
+      wrapper.style.display = 'flex';
+      wrapper.style.flexDirection = 'column';
+      wrapper.style.alignItems = 'center';
+      
+      // Wrap and constrain celebration element to 75% width
+      const celebrationWrapper = document.createElement('div');
+      celebrationWrapper.style.width = '75%';
+      celebrationWrapper.appendChild(celebrationElement.cloneNode(true));
+      wrapper.appendChild(celebrationWrapper);
+      wrapper.appendChild(screenshotBracket);
+      document.body.appendChild(wrapper);
+      
+      // Wait longer for images and text to render properly
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const canvas = await html2canvas(wrapper, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: true,
+        useCORS: true,
+        allowTaint: true,
+        proxy: null,
+        fontEmbedCSS: true,
+        removeContainer: false
+      });
+      
+      document.body.removeChild(wrapper);
+      
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = `bracket-${new Date().getFullYear()}.png`;
+      link.click();
+    } catch (error) {
+      console.error('Error downloading bracket:', error);
+      alert('Failed to download bracket. Please try again.');
+    }
+  };
+
   const BracketSummary = () => (
-    <div className="bg-gray-50 rounded-lg p-4 mt-4">
+    <div id="bracket-summary-capture" className="bg-gray-50 rounded-lg p-4 mt-4">
       <h4 className="text-lg font-semibold text-gray-800 mb-3 text-center font-oswald">Your Bracket Predictions</h4>
       
       {/* Super Bowl */}
       <div className="text-center mb-4">
         <div className="bg-yellow-100 border-2 border-yellow-300 rounded-lg p-3">
           <div className="text-xs font-semibold text-yellow-800 mb-2 font-roboto-condensed">SUPER BOWL CHAMPION</div>
-          <div className="flex items-center justify-center">
-            <img src={champion.logo} alt={champion.name} className="w-8 h-8 mr-2" />
-            <span className="font-bold text-yellow-800 font-oswald">{champion.location}</span>
+          <div className="flex items-center justify-center gap-2">
+            <img src={champion.logo} alt={champion.name} className="w-8 h-8 flex-shrink-0 inline-block align-middle" />
+            <span className="font-bold text-yellow-800 font-oswald leading-none inline-block align-middle">{champion.location}</span>
           </div>
         </div>
       </div>
@@ -43,9 +143,9 @@ const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBr
           <div className="text-xs font-semibold text-gray-600 mb-1">AFC CHAMPION</div>
           <div className="bg-white border rounded p-2">
             {bracketState.superBowl.afc ? (
-              <div className="flex items-center justify-center">
-                <img src={bracketState.superBowl.afc.logo} alt={bracketState.superBowl.afc.name} className="w-6 h-6 mr-2" />
-                <span className="text-sm">{bracketState.superBowl.afc.abbreviation}</span>
+              <div className="flex items-center justify-center gap-2">
+                <img src={bracketState.superBowl.afc.logo} alt={bracketState.superBowl.afc.name} className="w-6 h-6 flex-shrink-0 inline-block align-middle" />
+                <span className="text-sm leading-none inline-block align-middle">{bracketState.superBowl.afc.abbreviation}</span>
               </div>
             ) : (
               <span className="text-xs text-gray-400">TBD</span>
@@ -56,9 +156,9 @@ const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBr
           <div className="text-xs font-semibold text-gray-600 mb-1">NFC CHAMPION</div>
           <div className="bg-white border rounded p-2">
             {bracketState.superBowl.nfc ? (
-              <div className="flex items-center justify-center">
-                <img src={bracketState.superBowl.nfc.logo} alt={bracketState.superBowl.nfc.name} className="w-6 h-6 mr-2" />
-                <span className="text-sm">{bracketState.superBowl.nfc.abbreviation}</span>
+              <div className="flex items-center justify-center gap-2">
+                <img src={bracketState.superBowl.nfc.logo} alt={bracketState.superBowl.nfc.name} className="w-6 h-6 flex-shrink-0 inline-block align-middle" />
+                <span className="text-sm leading-none inline-block align-middle">{bracketState.superBowl.nfc.abbreviation}</span>
               </div>
             ) : (
               <span className="text-xs text-gray-400">TBD</span>
@@ -75,9 +175,9 @@ const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBr
             {bracketState.afc.wildCard.map((game, idx) => (
               <div key={idx} className="bg-white border rounded p-2 text-center">
                 {game.winner ? (
-                  <div className="flex items-center justify-center">
-                    <img src={game.winner.logo} alt={game.winner.name} className="w-4 h-4 mr-1" />
-                    <span className="text-xs">{game.winner.abbreviation}</span>
+                  <div className="flex items-center justify-center gap-1">
+                    <img src={game.winner.logo} alt={game.winner.name} className="w-4 h-4 flex-shrink-0 inline-block align-middle" />
+                    <span className="text-xs leading-none inline-block align-middle">{game.winner.abbreviation}</span>
                   </div>
                 ) : (
                   <span className="text-xs text-gray-400">TBD</span>
@@ -92,9 +192,9 @@ const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBr
             {bracketState.nfc.wildCard.map((game, idx) => (
               <div key={idx} className="bg-white border rounded p-2 text-center">
                 {game.winner ? (
-                  <div className="flex items-center justify-center">
-                    <img src={game.winner.logo} alt={game.winner.name} className="w-4 h-4 mr-1" />
-                    <span className="text-xs">{game.winner.abbreviation}</span>
+                  <div className="flex items-center justify-center gap-1">
+                    <img src={game.winner.logo} alt={game.winner.name} className="w-4 h-4 flex-shrink-0 inline-block align-middle" />
+                    <span className="text-xs leading-none inline-block align-middle">{game.winner.abbreviation}</span>
                   </div>
                 ) : (
                   <span className="text-xs text-gray-400">TBD</span>
@@ -130,7 +230,7 @@ const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBr
           ×
         </button>
         {/* Celebration Header */}
-        <div className="text-center mb-6">
+        <div id="bracket-celebration-capture" className="text-center mb-6">
           <div className="text-6xl mb-4">🏆</div>
           <h2 className="text-3xl font-bold text-gray-800 mb-2 font-oswald">
             Congratulations!
@@ -152,29 +252,29 @@ const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBr
         </div>
 
         {/* Bracket Summary */}
-        <BracketSummary />
+        <div id="bracket-summary-capture">
+          <BracketSummary />
+        </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center gap-3 mt-6">
+        <div className="flex justify-center gap-3 mt-6 text-sm md:text-base">
           <button
             onClick={onSubmitBracket}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
+            className="px-3 py-1 md:px-6 md:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
           >
-            🏆 Submit Bracket
+            Submit Bracket
           </button>
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="px-3 py-2 md:px-6 md:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             View Full Bracket
           </button>
           <button
-            onClick={() => {
-              alert('Share functionality coming soon!');
-            }}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            onClick={handleDownloadBracket}
+            className="px-3 py-2 md:px-6 md:py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
           >
-            Share
+            📥 Download Bracket
           </button>
         </div>
       </div>
@@ -182,7 +282,6 @@ const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBr
   );
 };
 
-// Team Slot Component - now for winner selection
 const TeamSlot = ({ team, isWinner, onClick, placeholder = "TBD", canSelect = false }) => (
   <div 
     onClick={canSelect ? onClick : undefined}
@@ -199,7 +298,14 @@ const TeamSlot = ({ team, isWinner, onClick, placeholder = "TBD", canSelect = fa
     {team ? (
       <>
         <img src={team.logo} alt={team.name} className="w-6 h-6 mr-3" />
-        <span className="text-sm font-medium font-oswald">{team.abbreviation}</span>
+        <div className="flex items-center gap-1">
+          <span className="text-sm font-medium font-oswald">{team.abbreviation}</span>
+          {team.playoffSeed && (
+            <span className="text-xs font-semibold text-gray-600 px-2 py-0.5 rounded">
+              ({team.playoffSeed})
+            </span>
+          )}
+        </div>
         {isWinner && <span className="ml-auto text-green-600 font-bold text-lg">✓</span>}
       </>
     ) : (
@@ -621,8 +727,6 @@ export default function BracketMaker() {
         <div className="flex flex-col sm:flex-row sm:justify-center sm:items-center gap-4 mb-4">
           <h1 className="text-4xl font-bold text-gray-800 font-oswald">NFL Bracket Maker</h1>
         </div>
-        <p className="text-lg text-gray-600 font-roboto-condensed">Current Playoff Contenders - {season} Season</p>
-        <p className="text-xs text-gray-600 font-roboto-condensed">*based on current standings*</p>
         {/* Championship Celebration Toggle Button */}
         {bracketState.superBowl.winner && !showChampionModal && (
           <div className="mt-4">
@@ -788,9 +892,10 @@ export default function BracketMaker() {
       </div>
 
       {/* Playoff Contenders */}
+      {/* COMMENTED OUT - AFC/NFC Playoff Picture
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* AFC Conference */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+        {/* <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center font-oswald">AFC Playoff Picture</h2>
           <div className="space-y-3">
             {afcTeams.map((team, index) => (
@@ -832,7 +937,7 @@ export default function BracketMaker() {
         </div>
 
         {/* NFC Conference */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+        {/* <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center font-oswald">NFC Playoff Picture</h2>
           <div className="space-y-3">
             {nfcTeams.map((team, index) => (
@@ -872,10 +977,10 @@ export default function BracketMaker() {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Legend */}
-      <div className="mt-8 bg-gray-50 rounded-lg p-4">
+      {/* <div className="mt-8 bg-gray-50 rounded-lg p-4">
         <h3 className="font-semibold text-gray-800 mb-3 font-oswald">Playoff Format</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-roboto-condensed">
           <div className="flex items-center">
@@ -891,7 +996,7 @@ export default function BracketMaker() {
             <span>Seed 7: Wild Card Visitor</span>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Championship Modal */}
       <ChampionshipModal
