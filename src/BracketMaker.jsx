@@ -318,7 +318,7 @@ export default function BracketMaker() {
                     { name: 'ties', value: team.ties },
                     { name: 'winPercent', value: team.winPercent },
                     { name: 'playoffSeed', value: team.playoffSeed },
-                    { name: 'pointDifferential', value: parseInt(team.differential.replace('+', '')) }
+                    { name: 'pointDifferential', value: team.differential ? parseInt(team.differential.toString().replace('+', '')) : 0 }
                   ]
                 }))
               }
@@ -341,7 +341,7 @@ export default function BracketMaker() {
                     { name: 'ties', value: team.ties },
                     { name: 'winPercent', value: team.winPercent },
                     { name: 'playoffSeed', value: team.playoffSeed },
-                    { name: 'pointDifferential', value: parseInt(team.differential.replace('+', '')) }
+                    { name: 'pointDifferential', value: team.differential ? parseInt(team.differential.toString().replace('+', '')) : 0 }
                   ]
                 }))
               }
@@ -376,6 +376,10 @@ export default function BracketMaker() {
               };
             })
           );
+
+          // Log raw playoff seeds from backend
+          console.log('Raw AFC teams from backend:', data.afc_teams.map(t => `${t.abbreviation}: seed=${t.playoffSeed}`));
+          console.log('Raw NFC teams from backend:', data.nfc_teams.map(t => `${t.abbreviation}: seed=${t.playoffSeed}`));
 
           setConferences(mockConferences);
           setAllTeams(teams);

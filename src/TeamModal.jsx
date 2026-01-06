@@ -7,7 +7,16 @@ const TeamModal = ({ team, isOpen, onClose, season }) => {
   const [activeTab, setActiveTab] = useState('info');
 
   const currentYear = new Date().getFullYear();
-  const isCurrentSeason = season >= currentYear;
+  const currentMonth = new Date().getMonth(); // 0-indexed, so January = 0
+  
+  // NFL season runs from September (month 8) through the following February (month 1)
+  // Current season is: this year if we're in Sept-Dec, or previous year if we're in Jan-Feb
+  let currentNFLSeason = currentYear;
+  if (currentMonth < 2) { // January or February
+    currentNFLSeason = currentYear - 1;
+  }
+  
+  const isCurrentSeason = season >= currentNFLSeason;
 
   useEffect(() => {
     if (isOpen && team) {
