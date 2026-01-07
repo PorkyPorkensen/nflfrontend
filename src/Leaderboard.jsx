@@ -404,7 +404,7 @@ const Leaderboard = () => {
       {/* Scoring Info */}
       <div className="mt-8 bg-blue-50 rounded-lg p-6 border border-blue-400 shadow-md">
         <h3 className="text-lg font-semibold text-blue-900 mb-3 text-center md:text-left">How Scoring Works</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-center md:text-left">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-center md:text-left mb-6">
           <div>
             <h4 className="font-medium text-blue-800 mb-1">Wild Card Round</h4>
             <p className="text-blue-700">1 point per correct pick</p>
@@ -421,10 +421,10 @@ const Leaderboard = () => {
             <h4 className="font-medium text-blue-800 mb-1">Super Bowl</h4>
             <p className="text-blue-700">8 points for correct pick</p>
           </div>
-          <div>
-            <h4 className="font-medium text-blue-800 mb-1">Tie Breaker</h4>
-            <p className="text-blue-700">If there is a tie, the users will be put on a RNG wheel or number selector to fairly determine a winner.</p>
-          </div>
+        </div>
+        <div className="text-center border-t border-blue-300 pt-4">
+          <h4 className="font-medium text-blue-800 mb-2">Tie Breaker</h4>
+          <p className="text-blue-700 max-w-2xl mx-auto">If there is a tie, the users will be put on a RNG wheel or number selector to fairly determine a winner.</p>
         </div>
       </div>
     </div>
