@@ -194,7 +194,7 @@ export default function Home() {
       {liveGames.length > 0 && (
         <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-3xl font-bold text-gray-800 font-oswald">Results</h3>
+            <h3 className="text-xl md:text-3xl font-bold text-gray-800 font-oswald">Results</h3>
             
             {/* Week Navigation */}
             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-2">
