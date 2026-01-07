@@ -49,15 +49,6 @@ export default function GameDetailsModal({ gameId, onClose, isOpen }) {
       onClick={handleBackdropClick}
     >
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 md:top-4 md:right-4 text-gray-400 hover:text-gray-600 text-2xl md:text-3xl font-bold leading-none z-10 px-3 py-2 md:px-2 md:py-1 rounded-full hover:bg-gray-100 transition-colors"
-          aria-label="Close modal"
-        >
-          ×
-        </button>
-
         {loading && (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
@@ -79,7 +70,7 @@ export default function GameDetailsModal({ gameId, onClose, isOpen }) {
         )}
 
         {gameDetails && !loading && !error && (
-          <GameDetailsContent gameDetails={gameDetails} />
+          <GameDetailsContent gameDetails={gameDetails} onClose={onClose} />
         )}
         
         {/* Fallback content if detailed API fails but we still want to show something */}
@@ -95,7 +86,7 @@ export default function GameDetailsModal({ gameId, onClose, isOpen }) {
   );
 }
 
-function GameDetailsContent({ gameDetails }) {
+function GameDetailsContent({ gameDetails, onClose }) {
   // Log the full structure to understand the data better
   // console.log('Full gameDetails structure:', gameDetails);
   
@@ -126,9 +117,9 @@ function GameDetailsContent({ gameDetails }) {
   // });
   
   return (
-    <div className="pt-12 px-4 pb-6 md:p-6 mt-4">
+    <div className="px-4 pb-6 md:p-6 mt-4">
       {/* Game Header */}
-      <div className="mb-12 mt-4 pr-2 md:pr-8">
+      <div className="mb-12 mt-2 pr-2 md:pr-8">
         <div className="flex flex-col md:flex-row items-center justify-center mb-4 space-y-4 md:space-y-0">
           {/* Away Team */}
           <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto">
@@ -181,6 +172,17 @@ function GameDetailsContent({ gameDetails }) {
               {gameInfo.venue.address?.city ? ` • ${String(gameInfo.venue.address.city)}` : ''}
             </p>
           )}
+        </div>
+
+        {/* Close Button */}
+        <div className="text-center mt-4 mb-6">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+            aria-label="Close modal"
+          >
+            Close
+          </button>
         </div>
       </div>
 
