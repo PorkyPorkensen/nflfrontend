@@ -7,7 +7,8 @@ import {
   signOut,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 
 const AuthContext = createContext();
@@ -96,7 +97,10 @@ export function AuthProvider({ children }) {
     console.log('🔐 AuthContext: Logging out');
     return signOut(auth);
   }
-
+  // Reset password function
+  function resetPassword(email) {
+    return sendPasswordResetEmail(auth, email);
+  }
   // Get Firebase ID token for API calls
   async function getIdToken() {
     if (currentUser) {
@@ -126,7 +130,8 @@ export function AuthProvider({ children }) {
     login,
     signInWithGoogle,
     logout,
-    getIdToken
+    getIdToken,
+    resetPassword
   };
 
   return (

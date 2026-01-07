@@ -8,8 +8,9 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const { login, signup, signInWithGoogle } = useAuth();
+  const { login, signup, signInWithGoogle, resetPassword } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,6 +63,34 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
   const toggleMode = () => {
     setAuthMode(authMode === 'login' ? 'signup' : 'login');
     setError('');
+    setSuccessMessage('');
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+    setLoading(true);
+
+    if (!email) {
+      setError('Please enter your email address');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await resetPassword(email);
+      setSuccessMessage('Password reset email sent! Check your inbox to create a new password.');
+      setEmail('');
+    } catch (error) {
+      if (error.code === 'auth/user-not-found') {
+        setError('No account found with this email address.');
+      } else {
+        setError(error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -71,7 +100,7 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
       <div className="bg-white rounded-lg p-8 w-full max-w-md">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
-            {authMode === 'login' ? 'Sign In' : 'Create Account'}
+            {authMode === 'login' ? 'Sign In' : authMode === 'signup' ? 'Create Account' : 'Reset Password'}
           </h2>
           <button
             onClick={onClose}
@@ -87,7 +116,13 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        {successMessage && (
+          <div className="mb-4 p-3 bg-green-100 border border-green-300 rounded text-green-700 text-sm">
+            {successMessage}
+          </div>
+        )}
+
+        <form onSubmit={authMode === 'forgot' ? handleForgotPassword : handleSubmit}>
           {authMode === 'signup' && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -104,32 +139,53 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
             </div>
           )}
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          {authMode !== 'forgot' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          )}
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-              minLength="6"
-            />
-          </div>
+          {authMode === 'forgot' && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your email"
+                required
+              />
+              <p className="mt-2 text-xs text-gray-600">We'll send you a link to reset your password.</p>
+            </div>
+          )}
+
+          {authMode !== 'forgot' && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                minLength="6"
+              />
+            </div>
+          )}
 
           {authMode === 'signup' && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -146,11 +202,15 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 mb-4"
           >
-            {loading ? 'Loading...' : (authMode === 'login' ? 'Sign In' : 'Create Account')}
+            {loading ? 'Loading...' : (
+              authMode === 'login' ? 'Sign In' : 
+              authMode === 'signup' ? 'Create Account' : 
+              'Send Reset Email'
+            )}
           </button>
         </form>
 
-        {authMode === 'login' && (
+        {authMode === 'login' && !successMessage && (
           <>
             <div className="relative mb-4">
               <div className="absolute inset-0 flex items-center">
@@ -178,15 +238,36 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
         )}
 
         <div className="text-center">
-          <button
-            onClick={toggleMode}
-            className="text-blue-600 hover:text-blue-800 text-sm"
-          >
-            {authMode === 'login' 
-              ? "Don't have an account? Sign up" 
-              : "Already have an account? Sign in"
-            }
-          </button>
+          {authMode === 'forgot' ? (
+            <button
+              onClick={() => setAuthMode('login')}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              Back to Sign In
+            </button>
+          ) : (
+            <>
+              <div className="mb-3">
+                <button
+                  onClick={toggleMode}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  {authMode === 'login' 
+                    ? "Don't have an account? Sign up" 
+                    : "Already have an account? Sign in"
+                  }
+                </button>
+              </div>
+              {authMode === 'login' && (
+                <button
+                  onClick={() => setAuthMode('forgot')}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  Forgot your password?
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
