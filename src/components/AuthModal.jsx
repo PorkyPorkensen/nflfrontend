@@ -66,6 +66,15 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
     setSuccessMessage('');
   };
 
+  const generateDisplayName = () => {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let result = '';
+    for (let i = 0; i < 10; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setDisplayName(result);
+  };
+
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setError('');
@@ -128,14 +137,24 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Display Name
               </label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                maxLength="20"
-                required
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength="20"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={generateDisplayName}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
+                  title="Generate random display name"
+                >
+                  🎲 Generate
+                </button>
+              </div>
             </div>
           )}
 
