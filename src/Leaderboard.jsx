@@ -421,6 +421,10 @@ const Leaderboard = () => {
             <h4 className="font-medium text-blue-800 mb-1">Super Bowl</h4>
             <p className="text-blue-700">8 points for correct pick</p>
           </div>
+          <div>
+            <h4 className="font-medium text-blue-800 mb-1">Tie Breaker</h4>
+            <p className="text-blue-700">If there is a tie, the users will be put on a RNG wheel or number selector to fairly determine a winner.</p>
+          </div>
         </div>
       </div>
     </div>
