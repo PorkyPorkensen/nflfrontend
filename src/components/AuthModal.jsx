@@ -207,13 +207,19 @@ const AuthModal = ({ isOpen, onClose, mode = 'login' }) => {
           )}
 
           {authMode === 'signup' && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-gray-700 mb-2 font-medium font-roboto-condensed">For your peace of mind, know that:</p>
-              <ul className="text-xs text-gray-600 space-y-1 font-roboto-condensed">
-                <li className='font-bold text-sm'>• I do not have access to your passwords</li>
-                <li>• I will not be using your email for anything other than to contact you if you win a contest. No 3rd parties will have access to your email</li>
-              </ul>
-            </div>
+            <>
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800 mb-2 font-medium font-roboto-condensed">⚠️ Important:</p>
+                <p className="text-xs text-yellow-800 font-roboto-condensed">Please do not make multiple accounts. If you are caught doing so, your brackets will be deleted.</p>
+              </div>
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-gray-700 mb-2 font-medium font-roboto-condensed">For your peace of mind, know that:</p>
+                <ul className="text-xs text-gray-600 space-y-1 font-roboto-condensed">
+                  <li className='font-bold text-sm'>• I do not have access to your passwords</li>
+                  <li>• I will not be using your email for anything other than to contact you if you win a contest. No 3rd parties will have access to your email</li>
+                </ul>
+              </div>
+            </>
           )}
 
           <button
