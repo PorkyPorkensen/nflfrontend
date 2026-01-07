@@ -35,7 +35,7 @@ export default function Home() {
     // Regular season is weeks 1-18
     const calculatedWeek = Math.max(1, Math.min(22, weeksDiff)); // Allow up to week 22 for playoffs
     
-    console.log('Week calculation:', { now, seasonYear, seasonStart, weeksDiff, calculatedWeek });
+    // console.log('Week calculation:', { now, seasonYear, seasonStart, weeksDiff, calculatedWeek });
     return calculatedWeek;
   });
   const [showAllGames, setShowAllGames] = useState(false);
@@ -45,9 +45,14 @@ export default function Home() {
   useEffect(() => {
     // Fetch live games - try alternative endpoints
     const tryScoreboardAPI = async () => {
+      // Determine if this is a playoff week
+      const isPlayoff = week > 18;
+      const playoffWeek = isPlayoff ? week - 18 : week;
+      const seasonType = isPlayoff ? 3 : 2; // 2 = regular season, 3 = postseason
+      
       const endpoints = [
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${week}&seasontype=2`,
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${new Date().toISOString().slice(0, 10).replace(/-/g, '')}&week=${week}`
+        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${playoffWeek}&seasontype=${seasonType}`,
+        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${new Date().toISOString().slice(0, 10).replace(/-/g, '')}&week=${playoffWeek}`
       ];
 
       for (const endpoint of endpoints) {
@@ -84,12 +89,12 @@ export default function Home() {
             return;
           }
         } catch (err) {
-          console.log(`Endpoint failed: ${endpoint}`, err);
+          // console.log(`Endpoint failed: ${endpoint}`, err);
         }
       }
       
       // If all endpoints fail, create some mock data for testing
-      console.log('All endpoints failed, using mock data');
+      // console.log('All endpoints failed, using mock data');
       setLiveGames([
         {
           id: 'mock1',
@@ -189,28 +194,35 @@ export default function Home() {
       {liveGames.length > 0 && (
         <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-3xl font-bold text-gray-800 font-oswald">Scores</h3>
+            <h3 className="text-3xl font-bold text-gray-800 font-oswald">Results</h3>
             
             {/* Week Navigation */}
-            <div className="flex items-center gap-2">
-              <label className="mr-3 font-semibold text-gray-700 font-roboto-condensed">Week:</label>
-              <button 
-                onClick={() => setWeek(Math.max(1, week - 1))}
-                disabled={week <= 1}
-                className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
-              >
-                ←
-              </button>
-              <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold min-w-16 text-center font-roboto-mono">
-                {week}
-              </span>
-              <button 
-                onClick={() => setWeek(Math.min(18, week + 1))}
-                disabled={week >= 18}
-                className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
-              >
-                →
-              </button>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-2">
+              <div className="flex items-center gap-2">
+                <label className="mr-3 font-semibold text-gray-700 font-roboto-condensed">Week:</label>
+                <button 
+                  onClick={() => setWeek(Math.max(1, week - 1))}
+                  disabled={week <= 1}
+                  className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
+                >
+                  ←
+                </button>
+                <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold min-w-16 text-center font-roboto-mono">
+                  {week}
+                </span>
+                <button 
+                  onClick={() => setWeek(Math.min(22, week + 1))}
+                  disabled={week >= 22}
+                  className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
+                >
+                  →
+                </button>
+              </div>
+              {week > 18 && (
+                <span className="px-3 py-2 bg-purple-100 text-purple-800 rounded-lg font-semibold text-sm font-roboto-condensed text-center">
+                  {['', 'Wild Card', 'Divisional', 'Conference', 'Super Bowl'][week - 18]}
+                </span>
+              )}
             </div>
           </div>
 

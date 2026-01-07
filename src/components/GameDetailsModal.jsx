@@ -28,7 +28,7 @@ export default function GameDetailsModal({ gameId, onClose, isOpen }) {
       setGameDetails(data);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching game details:', err);
+      // console.error('Error fetching game details:', err);
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ export default function GameDetailsModal({ gameId, onClose, isOpen }) {
 
 function GameDetailsContent({ gameDetails }) {
   // Log the full structure to understand the data better
-  console.log('Full gameDetails structure:', gameDetails);
+  // console.log('Full gameDetails structure:', gameDetails);
   
   const { header, boxscore, gameInfo, drives, leaders, winprobability, pickcenter, broadcasts, news } = gameDetails;
   
@@ -105,25 +105,25 @@ function GameDetailsContent({ gameDetails }) {
   const homeTeam = competition?.competitors?.find(team => team.homeAway === 'home');
   const awayTeam = competition?.competitors?.find(team => team.homeAway === 'away');
   
-  console.log('Parsed teams:', { homeTeam, awayTeam });
-  console.log('Home team logo paths:', {
-    logo: homeTeam?.team?.logo,
-    logos: homeTeam?.team?.logos,
-    logoHref: homeTeam?.team?.logos?.[0]?.href
-  });
-  console.log('Away team logo paths:', {
-    logo: awayTeam?.team?.logo, 
-    logos: awayTeam?.team?.logos,
-    logoHref: awayTeam?.team?.logos?.[0]?.href
-  });
-  console.log('Game status:', header?.competitions?.[0]?.status?.type?.state);
-  console.log('Officials structure:', gameInfo?.officials?.[0]);
-  console.log('Weather structure:', gameInfo?.weather);
-  console.log('Header structure for date/time:', {
-    date: header?.competitions?.[0]?.date,
-    season: header?.season,
-    week: header?.week
-  });
+  // console.log('Parsed teams:', { homeTeam, awayTeam });
+  // console.log('Home team logo paths:', {
+  //   logo: homeTeam?.team?.logo,
+  //   logos: homeTeam?.team?.logos,
+  //   logoHref: homeTeam?.team?.logos?.[0]?.href
+  // });
+  // console.log('Away team logo paths:', {
+  //   logo: awayTeam?.team?.logo, 
+  //   logos: awayTeam?.team?.logos,
+  //   logoHref: awayTeam?.team?.logos?.[0]?.href
+  // });
+  // console.log('Game status:', header?.competitions?.[0]?.status?.type?.state);
+  // console.log('Officials structure:', gameInfo?.officials?.[0]);
+  // console.log('Weather structure:', gameInfo?.weather);
+  // console.log('Header structure for date/time:', {
+  //   date: header?.competitions?.[0]?.date,
+  //   season: header?.season,
+  //   week: header?.week
+  // });
   
   return (
     <div className="pt-12 px-4 pb-6 md:p-6 mt-4">

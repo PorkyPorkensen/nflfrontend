@@ -32,7 +32,7 @@ const BracketSubmission = ({ bracketData, onClose, onSuccess }) => {
           setExistingBrackets(data.brackets || []);
         }
       } catch (error) {
-        console.error('Error checking existing brackets:', error);
+        // console.error('Error checking existing brackets:', error);
       } finally {
         setLoading(false);
       }
@@ -80,9 +80,9 @@ const BracketSubmission = ({ bracketData, onClose, onSuccess }) => {
         season_year: 2025
       };
 
-      console.log('Submitting bracket with data:', submissionData);
-      console.log('bracketData (predictions):', bracketData);
-      console.log('bracketData type:', typeof bracketData);
+      // console.log('Submitting bracket with data:', submissionData);
+      // console.log('bracketData (predictions):', bracketData);
+      // console.log('bracketData type:', typeof bracketData);
 
       const response = await makeAuthenticatedRequest(API_ENDPOINTS.brackets, {
         method: 'POST',
@@ -106,7 +106,7 @@ const BracketSubmission = ({ bracketData, onClose, onSuccess }) => {
         throw new Error(errorData.message || 'Failed to submit bracket');
       }
     } catch (error) {
-      console.error('Error submitting bracket:', error);
+      // console.error('Error submitting bracket:', error);
       alert('Error submitting bracket. Please try again.');
     } finally {
       setSubmitting(false);

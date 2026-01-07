@@ -117,7 +117,7 @@ const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBr
       link.download = `bracket-${new Date().getFullYear()}.png`;
       link.click();
     } catch (error) {
-      console.error('Error downloading bracket:', error);
+      // console.error('Error downloading bracket:', error);
       alert('Failed to download bracket. Please try again.');
     }
   };
@@ -484,17 +484,17 @@ export default function BracketMaker() {
           );
 
           // Log raw playoff seeds from backend
-          console.log('Raw AFC teams from backend:', data.afc_teams.map(t => `${t.abbreviation}: seed=${t.playoffSeed}`));
-          console.log('Raw NFC teams from backend:', data.nfc_teams.map(t => `${t.abbreviation}: seed=${t.playoffSeed}`));
+          // console.log('Raw AFC teams from backend:', data.afc_teams.map(t => `${t.abbreviation}: seed=${t.playoffSeed}`));
+          // console.log('Raw NFC teams from backend:', data.nfc_teams.map(t => `${t.abbreviation}: seed=${t.playoffSeed}`));
 
           setConferences(mockConferences);
           setAllTeams(teams);
         } else {
-          console.error('Failed to fetch teams:', data.message);
+          // console.error('Failed to fetch teams:', data.message);
         }
       })
       .catch(error => {
-        console.error('Error fetching teams:', error);
+        // console.error('Error fetching teams:', error);
         // Fallback to ESPN API if backend fails
         fetch(`https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings?season=${season}`)
           .then(res => res.json())
@@ -532,7 +532,7 @@ export default function BracketMaker() {
             setAllTeams(teams);
           })
           .catch(fallbackError => {
-            console.error('Both backend and ESPN API failed:', fallbackError);
+            // console.error('Both backend and ESPN API failed:', fallbackError);
           });
       });
   }, [season]);
@@ -553,8 +553,8 @@ export default function BracketMaker() {
     const newBracket = { ...bracketState };
     
     // Log team seeds for debugging
-    console.log('AFC Teams for bracket:', afcTeams.map(t => `${t.abbreviation} (Seed ${t.playoffSeed})`));
-    console.log('NFC Teams for bracket:', nfcTeams.map(t => `${t.abbreviation} (Seed ${t.playoffSeed})`));
+    // console.log('AFC Teams for bracket:', afcTeams.map(t => `${t.abbreviation} (Seed ${t.playoffSeed})`));
+    // console.log('NFC Teams for bracket:', nfcTeams.map(t => `${t.abbreviation} (Seed ${t.playoffSeed})`));
     
     // AFC Wild Card matchups - fixed based on seeding
     if (afcTeams.length >= 7) {
@@ -567,12 +567,12 @@ export default function BracketMaker() {
       newBracket.afc.divisional[0] = { home: afcTeams[0], away: null, winner: null }; // #1 seed waits
       newBracket.afc.divisional[1] = { home: null, away: null, winner: null }; // Other matchup TBD
       
-      console.log('AFC bracket initialized:', {
-        seed1: afcTeams[0].abbreviation,
-        seed2v7: `${afcTeams[1].abbreviation} vs ${afcTeams[6].abbreviation}`,
-        seed3v6: `${afcTeams[2].abbreviation} vs ${afcTeams[5].abbreviation}`,
-        seed4v5: `${afcTeams[3].abbreviation} vs ${afcTeams[4].abbreviation}`
-      });
+      // console.log('AFC bracket initialized:', {
+      //   seed1: afcTeams[0].abbreviation,
+      //   seed2v7: `${afcTeams[1].abbreviation} vs ${afcTeams[6].abbreviation}`,
+      //   seed3v6: `${afcTeams[2].abbreviation} vs ${afcTeams[5].abbreviation}`,
+      //   seed4v5: `${afcTeams[3].abbreviation} vs ${afcTeams[4].abbreviation}`
+      // });
     }
     
     // NFC Wild Card matchups - fixed based on seeding
@@ -586,12 +586,12 @@ export default function BracketMaker() {
       newBracket.nfc.divisional[0] = { home: nfcTeams[0], away: null, winner: null }; // #1 seed waits
       newBracket.nfc.divisional[1] = { home: null, away: null, winner: null }; // Other matchup TBD
       
-      console.log('NFC bracket initialized:', {
-        seed1: nfcTeams[0].abbreviation,
-        seed2v7: `${nfcTeams[1].abbreviation} vs ${nfcTeams[6].abbreviation}`,
-        seed3v6: `${nfcTeams[2].abbreviation} vs ${nfcTeams[5].abbreviation}`,
-        seed4v5: `${nfcTeams[3].abbreviation} vs ${nfcTeams[4].abbreviation}`
-      });
+      // console.log('NFC bracket initialized:', {
+      //   seed1: nfcTeams[0].abbreviation,
+      //   seed2v7: `${nfcTeams[1].abbreviation} vs ${nfcTeams[6].abbreviation}`,
+      //   seed3v6: `${nfcTeams[2].abbreviation} vs ${nfcTeams[5].abbreviation}`,
+      //   seed4v5: `${nfcTeams[3].abbreviation} vs ${nfcTeams[4].abbreviation}`
+      // });
     }
     
     setBracketState(newBracket);
@@ -602,7 +602,7 @@ export default function BracketMaker() {
     // Check if this is a Super Bowl winner selection
     const isSuperBowlWinner = (round === 'superBowl' || conference === 'superBowl' || round === 'final');
     
-    console.log('Winner selected:', { conference, round, gameIndex, winner: winner?.name, isSuperBowlWinner });
+    // console.log('Winner selected:', { conference, round, gameIndex, winner: winner?.name, isSuperBowlWinner });
     
     setBracketState(prev => {
       const newState = JSON.parse(JSON.stringify(prev)); // Deep clone to avoid mutations
@@ -624,10 +624,20 @@ export default function BracketMaker() {
         progressToDivisional(newState, conference);
       } else if (round === 'divisional') {
         // Winner goes to conference championship
-        if (!newState[conference].championship.home) {
-          newState[conference].championship.home = winner;
-        } else if (!newState[conference].championship.away) {
-          newState[conference].championship.away = winner;
+        // Get all divisional winners to rebuild the championship matchup
+        const divisionalWinners = newState[conference].divisional
+          .filter(game => game.winner)
+          .map(game => game.winner);
+        
+        // Reset championship to avoid stale references
+        newState[conference].championship = { home: null, away: null, winner: null };
+        
+        // Populate championship with divisional winners (max 2)
+        if (divisionalWinners.length >= 1) {
+          newState[conference].championship.home = divisionalWinners[0];
+        }
+        if (divisionalWinners.length >= 2) {
+          newState[conference].championship.away = divisionalWinners[1];
         }
       } else if (round === 'championship') {
         // Winner goes to Super Bowl
@@ -741,9 +751,9 @@ export default function BracketMaker() {
       </div>
 
       {/* User's Previous Brackets */}
-      {console.log('BracketMaker: user state:', currentUser ? 'logged in' : 'not logged in')}
+      {/* console.log('BracketMaker: user state:', currentUser ? 'logged in' : 'not logged in') */}
       {currentUser && <UserBrackets refreshTrigger={bracketRefreshTrigger} />}
-      {!currentUser && console.log('BracketMaker: UserBrackets NOT rendered - user not logged in')}
+      {/* !currentUser && console.log('BracketMaker: UserBrackets NOT rendered - user not logged in') */}
 
       {/* Interactive Bracket Builder */}
       <div className="mb-8">

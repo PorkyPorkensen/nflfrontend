@@ -31,7 +31,7 @@ const Leaderboard = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching playoff teams:', error);
+      // console.error('Error fetching playoff teams:', error);
     }
   };
 
@@ -47,10 +47,10 @@ const Leaderboard = () => {
         const data = await response.json();
         setLeaderboard(data.leaderboard || []);
       } else {
-        console.error('Failed to fetch leaderboard');
+        // console.error('Failed to fetch leaderboard');
       }
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      // console.error('Error fetching leaderboard:', error);
     } finally {
       setLoading(false);
     }
@@ -70,8 +70,8 @@ const Leaderboard = () => {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('🎯 Seeded results processed successfully!');
-        console.log('📊 Result:', result);
+        // console.log('🎯 Seeded results processed successfully!');
+        // console.log('📊 Result:', result);
         
         alert(`✅ Seeded scoring processed!\n\n${result.message}\n\n${result.results_count} games found.\n\nLeaderboard will show updated scores.`);
         
@@ -81,7 +81,7 @@ const Leaderboard = () => {
         throw new Error('Failed to process seeded results');
       }
     } catch (error) {
-      console.error('Error processing seeded results:', error);
+      // console.error('Error processing seeded results:', error);
       alert('❌ Error processing seeded results. Check the console for details.');
     } finally {
       setProcessingResults(false);

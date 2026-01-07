@@ -10,15 +10,15 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
   const [deletingBracket, setDeletingBracket] = useState(null);
   const { currentUser } = useAuth();
 
-  console.log('UserBrackets rendered, user:', currentUser);
-  console.log('User details:', {
-    uid: currentUser?.uid,
-    email: currentUser?.email,
-    displayName: currentUser?.displayName
-  });
+  // console.log('UserBrackets rendered, user:', currentUser);
+  // console.log('User details:', {
+  //   uid: currentUser?.uid,
+  //   email: currentUser?.email,
+  //   displayName: currentUser?.displayName
+  // });
 
   useEffect(() => {
-    console.log('UserBrackets useEffect triggered, user:', currentUser);
+    // console.log('UserBrackets useEffect triggered, user:', currentUser);
     if (currentUser) {
       fetchUserBrackets();
     }
@@ -26,22 +26,22 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
 
   const fetchUserBrackets = async () => {
     try {
-      console.log('fetchUserBrackets called');
+      // console.log('fetchUserBrackets called');
       setLoading(true);
       const token = await currentUser.getIdToken();
-      console.log('Got token:', token ? 'Yes' : 'No');
+      // console.log('Got token:', token ? 'Yes' : 'No');
       
       // Debug: decode the token to see what's in it
       if (token) {
         try {
           const payload = JSON.parse(atob(token.split('.')[1]));
-          console.log('Token payload contains:', {
-            uid: payload.user_id || payload.sub,
-            email: payload.email,
-            name: payload.name
-          });
+          // console.log('Token payload contains:', {
+          //   uid: payload.user_id || payload.sub,
+          //   email: payload.email,
+          //   name: payload.name
+          // });
         } catch (e) {
-          console.log('Could not decode token');
+          // console.log('Could not decode token');
         }
       }
       
@@ -51,19 +51,19 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
         token
       );
 
-      console.log('API response status:', response.status);
+      // console.log('API response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('API response data:', data);
+        // console.log('API response data:', data);
         setBrackets(data.brackets || []);
       } else {
         const errorData = await response.text();
-        console.error('API error response:', errorData);
+        // console.error('API error response:', errorData);
         throw new Error('Failed to fetch brackets');
       }
     } catch (err) {
-      console.error('Error fetching user brackets:', err);
+      // console.error('Error fetching user brackets:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -94,7 +94,7 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
         throw new Error(errorData.message || 'Failed to delete bracket');
       }
     } catch (err) {
-      console.error('Error deleting bracket:', err);
+      // console.error('Error deleting bracket:', err);
       alert('Error deleting bracket: ' + err.message);
     } finally {
       setDeletingBracket(null);
@@ -109,7 +109,7 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
       }
       return predictions?.superBowl?.winner;
     } catch (err) {
-      console.error('Error parsing predictions:', err);
+      // console.error('Error parsing predictions:', err);
       return null;
     }
   };
@@ -131,7 +131,7 @@ const UserBrackets = ({ refreshTrigger = 0 }) => {
         ? JSON.parse(bracket.predictions) 
         : bracket.predictions;
     } catch (err) {
-      console.error('Error parsing bracket predictions:', err);
+      // console.error('Error parsing bracket predictions:', err);
       return <div className="text-red-500">Error displaying bracket details</div>;
     }
 

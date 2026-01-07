@@ -34,7 +34,7 @@ export default function LiveGamesHeader() {
     // Regular season is weeks 1-18
     const calculatedWeek = Math.max(1, Math.min(22, weeksDiff)); // Allow up to week 22 for playoffs
     
-    console.log('Week calculation:', { now, seasonYear, seasonStart, weeksDiff, calculatedWeek });
+    // console.log('Week calculation:', { now, seasonYear, seasonStart, weeksDiff, calculatedWeek });
     return calculatedWeek;
   });
   const [showAllGames, setShowAllGames] = useState(false);
@@ -64,9 +64,14 @@ export default function LiveGamesHeader() {
   useEffect(() => {
     // Fetch live games - try alternative endpoints
     const tryScoreboardAPI = async () => {
+      // Determine if this is a playoff week
+      const isPlayoff = week > 18;
+      const playoffWeek = isPlayoff ? week - 18 : week;
+      const seasonType = isPlayoff ? 3 : 2; // 2 = regular season, 3 = postseason
+      
       const endpoints = [
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${week}&seasontype=2`,
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${new Date().toISOString().slice(0, 10).replace(/-/g, '')}&week=${week}`
+        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${playoffWeek}&seasontype=${seasonType}`,
+        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${new Date().toISOString().slice(0, 10).replace(/-/g, '')}&week=${playoffWeek}`
       ];
 
       for (const endpoint of endpoints) {
@@ -74,8 +79,8 @@ export default function LiveGamesHeader() {
           const res = await fetch(endpoint);
           if (res.ok) {
             const data = await res.json();
-            console.log('Successful endpoint:', endpoint);
-            console.log('Data structure:', data);
+            // console.log('Successful endpoint:', endpoint);
+            // console.log('Data structure:', data);
             
             const games = data.events?.map(event => {
               const competition = event.competitions[0];
@@ -84,8 +89,8 @@ export default function LiveGamesHeader() {
               
               // Log the complete event structure for the first game to see what's available
               if (data.events.indexOf(event) === 0) {
-                console.log('Sample game event structure:', event);
-                console.log('Competition details:', competition);
+                // console.log('Sample game event structure:', event);
+                // console.log('Competition details:', competition);
               }
               
               return {
@@ -112,12 +117,12 @@ export default function LiveGamesHeader() {
             return;
           }
         } catch (err) {
-          console.log(`Endpoint failed: ${endpoint}`, err);
+          // console.log(`Endpoint failed: ${endpoint}`, err);
         }
       }
       
       // If all endpoints fail, create some mock data for testing
-      console.log('All endpoints failed, using mock data');
+      // console.log('All endpoints failed, using mock data');
       setLiveGames([
         {
           id: 'mock1',
@@ -168,10 +173,10 @@ export default function LiveGamesHeader() {
   return (
     <div className="p-6 w-full max-w-6xl mx-auto mb-8">
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-800 mb-3 font-oswald">Scores</h2>
+        <h2 className="text-2xl text-center md:text-left font-bold text-gray-800 mb-3 font-oswald">Results</h2>
         
         {/* Week Navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 items-center md:items-center justify-center md:justify-between">
           <div className="flex items-center gap-2">
             <label className="mr-3 font-semibold text-gray-700 font-roboto-condensed">Week:</label>
             <button 
@@ -185,18 +190,23 @@ export default function LiveGamesHeader() {
               {week}
             </span>
             <button 
-              onClick={() => setWeek(Math.min(18, week + 1))}
-              disabled={week >= 18}
+              onClick={() => setWeek(Math.min(22, week + 1))}
+              disabled={week >= 22}
               className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
             >
               →
             </button>
+            {week > 18 && (
+              <span className="px-3 py-2 bg-purple-100 text-purple-800 rounded-lg font-semibold text-sm font-roboto-condensed">
+                {['', 'Wild Card', 'Divisional', 'Conference', 'Super Bowl'][week - 18]}
+              </span>
+            )}
           </div>
           
           {liveGames.length > getDefaultGameCount() && (
             <button
               onClick={() => setShowAllGames(!showAllGames)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-xs md:max-w-none w-full md:w-auto"
             >
               {showAllGames ? 'Show Less' : `Show All (${liveGames.length})`}
             </button>

@@ -20,7 +20,7 @@ const TeamModal = ({ team, isOpen, onClose, season }) => {
 
   useEffect(() => {
     if (isOpen && team) {
-      console.log('Team data received:', team);
+      // console.log('Team data received:', team);
       // Reset to info tab if not current season
       if (!isCurrentSeason) {
         setActiveTab('info');
@@ -35,23 +35,23 @@ const TeamModal = ({ team, isOpen, onClose, season }) => {
   const fetchTeamData = async () => {
     setLoading(true);
     try {
-      console.log('Fetching team data for ID:', team.id);
+      // console.log('Fetching team data for ID:', team.id);
       // Fetch detailed team information
       const teamResponse = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/${team.id}`);
       const teamData = await teamResponse.json();
-      console.log('Team API response:', teamData);
+      // console.log('Team API response:', teamData);
       
       // Set team details with better data access
       const details = teamData.team || teamData;
-      console.log('Team details object:', details);
+      // console.log('Team details object:', details);
       setTeamDetails(details);
 
       // Fetch team roster
       try {
-        console.log('Fetching roster for team ID:', team.id);
+        // console.log('Fetching roster for team ID:', team.id);
         const rosterResponse = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/${team.id}/roster`);
         const rosterData = await rosterResponse.json();
-        console.log('Roster API response:', rosterData);
+        // console.log('Roster API response:', rosterData);
         
         // Handle different possible roster structures
         let rosterArray = [];
@@ -65,14 +65,14 @@ const TeamModal = ({ team, isOpen, onClose, season }) => {
           rosterArray = rosterData;
         }
         
-        console.log('Processed roster array:', rosterArray);
+        // console.log('Processed roster array:', rosterArray);
         setRoster(rosterArray);
       } catch (rosterError) {
-        console.error('Error fetching roster:', rosterError);
+        // console.error('Error fetching roster:', rosterError);
         setRoster([]);
       }
     } catch (error) {
-      console.error('Error fetching team data:', error);
+      // console.error('Error fetching team data:', error);
     } finally {
       setLoading(false);
     }

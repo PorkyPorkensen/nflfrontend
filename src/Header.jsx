@@ -22,7 +22,7 @@ export default function Header() {
       await logout();
       setIsMenuOpen(false);
     } catch (error) {
-      console.error('Error signing out:', error);
+      // console.error('Error signing out:', error);
     }
   };
 
