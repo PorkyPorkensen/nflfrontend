@@ -274,7 +274,7 @@ const BracketSubmission = ({ bracketData, onClose, onSuccess }) => {
             </button>
             <button
               type="submit"
-              disabled={submitting || !canSubmit}
+              disabled={true}
               className={`flex-1 px-4 py-2 rounded ${
                 canSubmit 
                   ? 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50' 
