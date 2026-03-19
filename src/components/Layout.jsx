@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Header from '../Header';
-import LiveGamesHeader from '../LiveGamesHeader';
+
 
 export default function Layout() {
   const location = useLocation();
@@ -14,7 +14,7 @@ export default function Layout() {
       <Header />
       
       {/* Live Games Header - Shows on every page except home */}
-      {showLiveGames && <LiveGamesHeader />}
+
       
       {/* Page Content */}
       <Outlet />

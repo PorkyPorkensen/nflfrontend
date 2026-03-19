@@ -1,23 +1,58 @@
 import { useEffect, useState } from "react";
+import PlayerDetailsModal from "./PlayerDetailsModal";
+import NBATeamModal from "./NBATeamModal";
 
-export default function GameDetailsModal({ gameId, onClose, isOpen }) {
+export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl' }) {
   const [gameDetails, setGameDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [showPlayerModal, setShowPlayerModal] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+
+  // Get sport-specific colors
+  const getSportColors = () => {
+    switch(sport.toLowerCase()) {
+      case 'nba':
+        return {
+          primary: 'orange',
+          bg: 'orange',
+          border: 'orange',
+          text: 'orange'
+        };
+      case 'nfl':
+      default:
+        return {
+          primary: 'blue',
+          bg: 'blue',
+          border: 'blue',
+          text: 'blue'
+        };
+    }
+  };
+
+  const colors = getSportColors();
 
   useEffect(() => {
     if (isOpen && gameId) {
       fetchGameDetails();
     }
-  }, [isOpen, gameId]);
+  }, [isOpen, gameId, sport]);
 
   const fetchGameDetails = async () => {
     setLoading(true);
     setError(null);
     
     try {
+      // Support NFL and NBA for now
+      const sportPath = sport.toLowerCase() === 'nba' 
+        ? 'basketball/nba' 
+        : 'football/nfl';
+      
       const response = await fetch(
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${gameId}`
+        `https://site.api.espn.com/apis/site/v2/sports/${sportPath}/summary?event=${gameId}`
       );
       
       if (!response.ok) {
@@ -51,7 +86,10 @@ export default function GameDetailsModal({ gameId, onClose, isOpen }) {
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
         {loading && (
           <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <div 
+              className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
+              style={{ borderBottomColor: colors.bg === 'orange' ? '#f97316' : '#3b82f6' }}
+            ></div>
             <p className="mt-4 text-gray-600 font-roboto-condensed">Loading game details...</p>
           </div>
         )}
@@ -62,7 +100,8 @@ export default function GameDetailsModal({ gameId, onClose, isOpen }) {
             <p className="text-gray-600 font-roboto-condensed">{error}</p>
             <button
               onClick={fetchGameDetails}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              style={{ backgroundColor: colors.bg === 'orange' ? '#f97316' : '#3b82f6' }}
+              className="mt-4 px-4 py-2 text-white rounded hover:opacity-80 transition-opacity"
             >
               Try Again
             </button>
@@ -70,7 +109,46 @@ export default function GameDetailsModal({ gameId, onClose, isOpen }) {
         )}
 
         {gameDetails && !loading && !error && (
-          <GameDetailsContent gameDetails={gameDetails} onClose={onClose} />
+          <GameDetailsContent gameDetails={gameDetails} onClose={onClose} sport={sport} colors={colors} onPlayerClick={(player, teamId, stats) => {
+            setSelectedPlayer(player);
+            setSelectedTeamId(teamId);
+            // Format stats for display
+            const gameStats = (stats || []).map((value, idx) => ({
+              value: value || '0',
+              label: (gameDetails?.boxscore?.players?.[player.playerGroupIdx]?.statistics?.[0]?.labels?.[idx]) || `Stat ${idx + 1}`
+            }));
+            setSelectedPlayer({ ...player, gameStats });
+            setShowPlayerModal(true);
+          }} onTeamClick={(team) => {
+            setSelectedTeam(team);
+            setShowTeamModal(true);
+          }} />
+        )}
+        
+        {/* Player Details Modal */}
+        <PlayerDetailsModal
+          isOpen={showPlayerModal}
+          onClose={() => {
+            setShowPlayerModal(false);
+            setSelectedPlayer(null);
+            setSelectedTeamId(null);
+          }}
+          player={selectedPlayer}
+          sport={sport}
+          teamId={selectedTeamId}
+          gameStats={selectedPlayer?.gameStats}
+        />
+
+        {/* Team Modal - Only show for NBA */}
+        {sport.toLowerCase() === 'nba' && (
+          <NBATeamModal
+            team={selectedTeam}
+            isOpen={showTeamModal}
+            onClose={() => {
+              setShowTeamModal(false);
+              setSelectedTeam(null);
+            }}
+          />
         )}
         
         {/* Fallback content if detailed API fails but we still want to show something */}
@@ -86,7 +164,7 @@ export default function GameDetailsModal({ gameId, onClose, isOpen }) {
   );
 }
 
-function GameDetailsContent({ gameDetails, onClose }) {
+function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg: 'blue', text: 'blue' }, onPlayerClick = () => {}, onTeamClick = () => {} }) {
   // Log the full structure to understand the data better
   // console.log('Full gameDetails structure:', gameDetails);
   
@@ -95,6 +173,40 @@ function GameDetailsContent({ gameDetails, onClose }) {
   const competition = header?.competitions?.[0];
   const homeTeam = competition?.competitors?.find(team => team.homeAway === 'home');
   const awayTeam = competition?.competitors?.find(team => team.homeAway === 'away');
+
+  // Helper function to get custom stat label for NBA
+  const getStatLabel = (statName) => {
+    const nbaLabels = {
+      'fieldGoalsMade-fieldGoalsAttempted': 'FG',
+      'threePointFieldGoalsMade-threePointFieldGoalsAttempted': '3PT',
+      'freeThrowsMade-freeThrowsAttempted': 'FT',
+      'fieldGoalPct': 'FG%',
+      'threePointFieldGoalPct': '3P%',
+      'freeThrowPct': 'FT%',
+      'totalRebounds': 'RB',
+      'offensiveRebounds': 'ORB',
+      'defensiveRebounds': 'DRB',
+      'assists': 'A',
+      'steals': 'STL',
+      'blocks': 'BLK',
+      'turnovers': 'TO'
+    };
+    return nbaLabels[statName] || statName;
+  };
+
+  // Filter stats for NBA (up to and including turnovers)
+  const getFilteredStats = (stats) => {
+    if (sport.toLowerCase() !== 'nba' || !Array.isArray(stats)) return stats;
+    
+    const turnoversIndex = stats.findIndex(stat => 
+      stat?.name?.toLowerCase().includes('turnover')
+    );
+    
+    if (turnoversIndex !== -1) {
+      return stats.slice(0, turnoversIndex + 1);
+    }
+    return stats;
+  };
   
   // console.log('Parsed teams:', { homeTeam, awayTeam });
   // console.log('Home team logo paths:', {
@@ -122,7 +234,7 @@ function GameDetailsContent({ gameDetails, onClose }) {
       <div className="mb-12 mt-2 pr-2 md:pr-8">
         <div className="flex flex-col md:flex-row items-center justify-center mb-4 space-y-4 md:space-y-0">
           {/* Away Team */}
-          <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto">
+          <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nba' && onTeamClick(awayTeam?.team)}>
             {(awayTeam?.team?.logo || awayTeam?.team?.logos?.[0]?.href) && (
               <img 
                 src={awayTeam.team.logo || awayTeam.team.logos[0].href} 
@@ -144,7 +256,7 @@ function GameDetailsContent({ gameDetails, onClose }) {
           <div className="mx-2 md:mx-4 text-gray-400 font-bold text-sm md:text-base">VS</div>
 
           {/* Home Team */}
-          <div className="flex items-center ml-0 md:ml-8 w-full md:w-auto">
+          <div className="flex items-center ml-0 md:ml-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nba' && onTeamClick(homeTeam?.team)}>
             {(homeTeam?.team?.logo || homeTeam?.team?.logos?.[0]?.href) && (
               <img 
                 src={homeTeam.team.logo || homeTeam.team.logos[0].href} 
@@ -178,7 +290,8 @@ function GameDetailsContent({ gameDetails, onClose }) {
         <div className="text-center mt-4 mb-6">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+            style={{ backgroundColor: colors.bg === 'orange' ? '#ea580c' : '#2563eb' }}
+            className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-opacity font-medium"
             aria-label="Close modal"
           >
             Close
@@ -199,33 +312,41 @@ function GameDetailsContent({ gameDetails, onClose }) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-2">Team</th>
-                    {Array.isArray(boxscore.teams[0]?.statistics) && boxscore.teams[0].statistics.map((stat, idx) => (
-                      <th key={idx} className="text-center px-2 py-2">{stat?.abbreviation || stat?.name || `Stat ${idx + 1}`}</th>
+                    <th className="text-left py-2 pr-6">Team</th>
+                    {Array.isArray(boxscore.teams[0]?.statistics) && getFilteredStats(boxscore.teams[0].statistics).map((stat, idx) => (
+                      <th key={idx} className="text-center px-3 py-2 whitespace-nowrap">
+                        {sport.toLowerCase() === 'nba' 
+                          ? getStatLabel(stat?.name || stat?.abbreviation || `Stat ${idx + 1}`)
+                          : (stat?.abbreviation || stat?.name || `Stat ${idx + 1}`)
+                        }
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {boxscore.teams.map((team, idx) => (
-                    <tr key={idx} className="border-b">
-                      <td className="py-2">
-                        <div className="flex items-center">
-                          {team?.team?.logo && (
-                            <img 
-                              src={team.team.logo} 
-                              alt={team.team?.name || 'Team'} 
-                              className="w-6 h-6 mr-2"
-                              onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                          )}
-                          {team?.team?.abbreviation || 'Team'}
-                        </div>
-                      </td>
-                      {Array.isArray(team?.statistics) && team.statistics.map((stat, statIdx) => (
-                        <td key={statIdx} className="text-center px-2 py-2">{stat?.displayValue || stat?.value || 'N/A'}</td>
-                      ))}
-                    </tr>
-                  ))}
+                  {boxscore.teams.map((team, idx) => {
+                    const filteredTeamStats = getFilteredStats(team?.statistics);
+                    return (
+                      <tr key={idx} className="border-b">
+                        <td className="py-2 pr-6">
+                          <div className="flex items-center gap-2">
+                            {team?.team?.logo && (
+                              <img 
+                                src={team.team.logo} 
+                                alt={team.team?.name || 'Team'} 
+                                className="w-6 h-6 flex-shrink-0"
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                              />
+                            )}
+                            <span className="font-medium">{team?.team?.abbreviation || 'Team'}</span>
+                          </div>
+                        </td>
+                        {Array.isArray(filteredTeamStats) && filteredTeamStats.map((stat, statIdx) => (
+                          <td key={statIdx} className="text-center px-3 py-2">{stat?.displayValue || stat?.value || 'N/A'}</td>
+                        ))}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -359,6 +480,72 @@ function GameDetailsContent({ gameDetails, onClose }) {
           </div>
         )}
       </div>
+
+      {/* Player Box Score */}
+      {boxscore?.players && Array.isArray(boxscore.players) && boxscore.players.some(pg => pg?.statistics?.[0]?.athletes?.length > 0) && (
+        <div className="mt-6 bg-gray-50 rounded-lg p-4 border border-gray-300">
+          <h3 className="text-lg font-semibold mb-3 font-oswald">Player Box Score</h3>
+          <div className="overflow-x-auto">
+            {boxscore.players.map((playerGroup, groupIdx) => {
+              const stats = playerGroup?.statistics?.[0];
+              const players = stats?.athletes || [];
+              
+              if (players.length === 0) return null;
+              
+              return (
+                <div key={groupIdx} className="mb-6">
+                  <h4 className="text-sm font-semibold mb-2 text-gray-700">{String(playerGroup?.team?.displayName || 'Team')}</h4>
+                  <table className="w-full text-xs md:text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 pr-4">Player</th>
+                        {stats?.labels && Array.isArray(stats.labels) && stats.labels.map((label, idx) => (
+                          <th key={idx} className="text-center px-2 py-2 whitespace-nowrap text-xs">
+                            {label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {players.map((playerEntry, playerIdx) => (
+                        <tr 
+                          key={playerIdx} 
+                          className="border-b hover:bg-gray-100 cursor-pointer transition-colors"
+                          onClick={() => {
+                            // Get the team info for fetching roster data
+                            const teamId = playerGroup?.team?.id || '';
+                            onPlayerClick(
+                              {
+                                id: playerEntry?.athlete?.id,
+                                athlete: playerEntry?.athlete,
+                                playerGroupIdx: groupIdx
+                              },
+                              teamId,
+                              playerEntry?.stats
+                            );
+                          }}
+                        >
+                          <td className="py-2 pr-4">
+                            <p className="font-medium">
+                              {String(playerEntry?.athlete?.displayName || 'Unknown')}
+                              {playerEntry?.athlete?.position?.abbreviation && (
+                                <span className="text-xs text-gray-500 ml-2">({String(playerEntry.athlete.position.abbreviation)})</span>
+                              )}
+                            </p>
+                          </td>
+                          {Array.isArray(playerEntry?.stats) && playerEntry.stats.map((stat, statIdx) => (
+                            <td key={statIdx} className="text-center px-2 py-2 text-xs">{stat || '0'}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Recent News */}
       {news?.articles && Array.isArray(news.articles) && news.articles.length > 0 && (

@@ -2,12 +2,23 @@ import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from './firebase/AuthContext';
 import AuthModal from './components/AuthModal';
+import { FEATURES } from './config/features';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showLeagueMenu, setShowLeagueMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { currentUser, logout } = useAuth();
   const location = useLocation();
+
+  // Determine current league from URL
+  const getCurrentLeague = () => {
+    if (location.pathname.startsWith('/nfl')) return 'nfl';
+    if (location.pathname.startsWith('/nba')) return 'nba';
+    return null;
+  };
+
+  const currentLeague = getCurrentLeague();
 
   const closeMenu = () => {
     setIsMenuOpen(false);
@@ -58,7 +69,7 @@ export default function Header() {
           </NavLink>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex space-x-4 lg:space-x-8">
+          <nav className="hidden md:flex space-x-2 lg:space-x-4 items-center">
             <NavLink
               to="/"
               className={({ isActive }) =>
@@ -71,43 +82,103 @@ export default function Header() {
             >
               Home
             </NavLink>
-            <NavLink
-              to="/nfl/standings"
-              className={({ isActive }) =>
-                `px-3 py-2 lg:px-4 rounded-lg font-medium transition-colors text-sm lg:text-base ${
-                  isActive
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200 underline'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-                }`
-              }
-            >
-              Standings
-            </NavLink>
-            <NavLink
-              to="/nfl/bracket-maker"
-              className={({ isActive }) =>
-                `px-3 py-2 lg:px-4 rounded-lg font-medium transition-colors text-sm lg:text-base ${
-                  isActive
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200 underline'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-                }`
-              }
-            >
-              <span className="hidden xl:inline">Bracket Maker</span>
-              <span className="xl:hidden">Brackets</span>
-            </NavLink>
-            <NavLink
-              to="/nfl/leaderboard"
-              className={({ isActive }) =>
-                `px-3 py-2 lg:px-4 rounded-lg font-medium transition-colors text-sm lg:text-base ${
-                  isActive
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200 underline'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-                }`
-              }
-            >
-              Leaderboard
-            </NavLink>
+
+            {/* League Selector Dropdown */}
+            <div className="relative group">
+              <button className="px-3 py-2 lg:px-4 rounded-lg font-medium transition-colors text-sm lg:text-base text-gray-600 hover:text-gray-800 hover:bg-gray-200 flex items-center">
+                <span>Leagues</span>
+                <svg className="w-4 h-4 ml-1 group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </button>
+              <div className="absolute left-0 mt-0 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <NavLink
+                  to="/nfl"
+                  className={({ isActive }) =>
+                    `block w-full text-left px-4 py-3 hover:bg-gray-50 rounded-t-lg font-medium ${
+                      isActive ? 'bg-blue-50 text-blue-700 border-b border-gray-200' : 'text-gray-700'
+                    }`
+                  }
+                >
+                  🏈 NFL
+                </NavLink>
+                <NavLink
+                  to="/nba"
+                  className={({ isActive }) =>
+                    `block w-full text-left px-4 py-3 hover:bg-gray-50 rounded-b-lg font-medium ${
+                      isActive ? 'bg-orange-50 text-orange-700' : 'text-gray-700'
+                    }`
+                  }
+                >
+                  🏀 NBA
+                </NavLink>
+              </div>
+            </div>
+
+            {/* Conditional League-Specific Links */}
+            {currentLeague === 'nfl' && (
+              <>
+                <NavLink
+                  to="/nfl/standings"
+                  className={({ isActive }) =>
+                    `px-3 py-2 lg:px-4 rounded-lg font-medium transition-colors text-sm lg:text-base ${
+                      isActive
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200 underline'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+                    }`
+                  }
+                >
+                  Standings
+                </NavLink>
+                {FEATURES.bracket && (
+                  <NavLink
+                    to="/nfl/bracket-maker"
+                    className={({ isActive }) =>
+                      `px-3 py-2 lg:px-4 rounded-lg font-medium transition-colors text-sm lg:text-base ${
+                        isActive
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200 underline'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+                      }`
+                    }
+                  >
+                    <span className="hidden xl:inline">Bracket Maker</span>
+                    <span className="xl:hidden">Brackets</span>
+                  </NavLink>
+                )}
+                {FEATURES.leaderboard && (
+                  <NavLink
+                    to="/nfl/leaderboard"
+                    className={({ isActive }) =>
+                      `px-3 py-2 lg:px-4 rounded-lg font-medium transition-colors text-sm lg:text-base ${
+                        isActive
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200 underline'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+                      }`
+                    }
+                  >
+                    Leaderboard
+                  </NavLink>
+                )}
+              </>
+            )}
+
+            {/* NBA League-Specific Links */}
+            {currentLeague === 'nba' && (
+              <>
+                <NavLink
+                  to="/nba/standings"
+                  className={({ isActive }) =>
+                    `px-3 py-2 lg:px-4 rounded-lg font-medium transition-colors text-sm lg:text-base ${
+                      isActive
+                        ? 'bg-orange-100 text-orange-700 border border-orange-200 underline'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+                    }`
+                  }
+                >
+                  Standings
+                </NavLink>
+              </>
+            )}
           </nav>
 
           {/* Auth Section - Desktop */}
@@ -155,7 +226,7 @@ export default function Header() {
         </div>
 
         {/* Mobile Navigation Menu */}
-        <div className={`md:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-92 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+        <div className={`md:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
           <nav className="py-4 space-y-2">
             <NavLink
               to="/"
@@ -170,47 +241,105 @@ export default function Header() {
             >
               Home
             </NavLink>
-            <NavLink
-              to="/nfl/standings"
-              onClick={closeMenu}
-              className={({ isActive }) =>
-                `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
-                  isActive
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`
-              }
-            >
-              Standings
-            </NavLink>
-            <NavLink
-              to="/nfl/bracket-maker"
-              onClick={closeMenu}
-              className={({ isActive }) =>
-                `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
-                  isActive
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`
-              }
-            >
-              Bracket Maker
-            </NavLink>
-            <NavLink
-              to="/nfl/leaderboard"
-              onClick={closeMenu}
-              className={({ isActive }) =>
-                `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
-                  isActive
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`
-              }
-            >
-              Leaderboard
-            </NavLink>
-            {/* Admin link for mobile - only show for admin users */}
-            {/* Removed admin path - no longer needed */}
+
+            {/* League Selector for Mobile */}
+            <div className="px-4 py-2 mt-2 mb-2">
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Leagues</p>
+              <NavLink
+                to="/nfl"
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors mb-1 ${
+                    isActive
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`
+                }
+              >
+                🏈 NFL
+              </NavLink>
+              <NavLink
+                to="/nba"
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                    isActive
+                      ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`
+                }
+              >
+                🏀 NBA
+              </NavLink>
+            </div>
+
+            {/* Conditional League-Specific Links for Mobile */}
+            {currentLeague === 'nfl' && (
+              <>
+                <NavLink
+                  to="/nfl/standings"
+                  onClick={closeMenu}
+                  className={({ isActive }) =>
+                    `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                      isActive
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                    }`
+                  }
+                >
+                  Standings
+                </NavLink>
+                {FEATURES.bracket && (
+                  <NavLink
+                    to="/nfl/bracket-maker"
+                    onClick={closeMenu}
+                    className={({ isActive }) =>
+                      `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                        isActive
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                      }`
+                    }
+                  >
+                    Bracket Maker
+                  </NavLink>
+                )}
+                {FEATURES.leaderboard && (
+                  <NavLink
+                    to="/nfl/leaderboard"
+                    onClick={closeMenu}
+                    className={({ isActive }) =>
+                      `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                        isActive
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                      }`
+                    }
+                  >
+                    Leaderboard
+                  </NavLink>
+                )}
+              </>
+            )}
+
+            {/* NBA League-Specific Links for Mobile */}
+            {currentLeague === 'nba' && (
+              <>
+                <NavLink
+                  to="/nba/standings"
+                  onClick={closeMenu}
+                  className={({ isActive }) =>
+                    `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                      isActive
+                        ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                    }`
+                  }
+                >
+                  Standings
+                </NavLink>
+              </>
+            )}
             
             {/* Mobile Auth Section */}
             <div className="border-t border-gray-200 pt-3 mt-3">

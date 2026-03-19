@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import TeamModal from './TeamModal';
+import LiveGamesHeader from "./LiveGamesHeader";
 
 export default function Standings() {
   const [conferences, setConferences] = useState([]);
@@ -115,6 +116,7 @@ export default function Standings() {
 
   return (
     <div className="p-6 w-full max-w-6xl mx-auto">
+      <LiveGamesHeader />
       {/* Page Header */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-4 font-oswald">NFL Standings - {season} Season</h1>

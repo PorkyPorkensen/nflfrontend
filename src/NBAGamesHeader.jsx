@@ -1,43 +1,9 @@
 import { useEffect, useState } from "react";
 import GameDetailsModal from "./components/GameDetailsModal";
 
-export default function LiveGamesHeader() {
+export default function NBAGamesHeader() {
   const [liveGames, setLiveGames] = useState([]);
-  const [week, setWeek] = useState(() => {
-    // Calculate current NFL week
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); // 0-indexed
-    
-    // Determine the season year (if we're in Jan-Feb, we're in the previous year's season)
-    const seasonYear = currentMonth < 2 ? currentYear - 1 : currentYear;
-    
-    // NFL season typically starts on the Thursday after Labor Day
-    // Labor Day is the first Monday in September
-    // For simplicity, we'll calculate from September 1st
-    const september1 = new Date(seasonYear, 8, 1);
-    
-    // Find the first Thursday of September (approximate season start)
-    let seasonStart = new Date(september1);
-    while (seasonStart.getDay() !== 4) { // 4 = Thursday
-      seasonStart.setDate(seasonStart.getDate() + 1);
-    }
-    
-    // For dates in January/February, use the current date
-    // For dates after September, use seasonStart
-    const referenceDate = currentMonth < 2 ? new Date(currentYear, currentMonth, now.getDate()) : seasonStart;
-    
-    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-    const weeksDiff = Math.floor((now - seasonStart) / msPerWeek) + 1;
-    
-    // NFL playoffs start around week 18-19 (late January)
-    // Regular season is weeks 1-18
-    // Week 19-23: Wild Card, Divisional, Conference, Super Bowl, Pro Bowl
-    const calculatedWeek = Math.max(1, Math.min(23, weeksDiff)); // Allow up to week 23 for Pro Bowl
-    
-    // console.log('Week calculation:', { now, seasonYear, seasonStart, weeksDiff, calculatedWeek });
-    return calculatedWeek;
-  });
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showAllGames, setShowAllGames] = useState(false);
   const [screenSize, setScreenSize] = useState('mobile');
   const [selectedGameId, setSelectedGameId] = useState(null);
@@ -63,16 +29,17 @@ export default function LiveGamesHeader() {
   }, []);
 
   useEffect(() => {
-    // Fetch live games - try alternative endpoints
+    // Fetch NBA live games
     const tryScoreboardAPI = async () => {
-      // Determine if this is a playoff week
-      const isPlayoff = week > 18;
-      const playoffWeek = isPlayoff ? week - 18 : week;
-      const seasonType = isPlayoff ? 3 : 2; // 2 = regular season, 3 = postseason
-      
+      // Format date as YYYYMMDD for ESPN API
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const formattedDate = `${year}${month}${day}`;
+
       const endpoints = [
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${playoffWeek}&seasontype=${seasonType}`,
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${new Date().toISOString().slice(0, 10).replace(/-/g, '')}&week=${playoffWeek}`
+        `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}`,
+        `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}&seasontype=2`
       ];
 
       for (const endpoint of endpoints) {
@@ -80,19 +47,11 @@ export default function LiveGamesHeader() {
           const res = await fetch(endpoint);
           if (res.ok) {
             const data = await res.json();
-            // console.log('Successful endpoint:', endpoint);
-            // console.log('Data structure:', data);
             
             const games = data.events?.map(event => {
               const competition = event.competitions[0];
               const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
               const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
-              
-              // Log the complete event structure for the first game to see what's available
-              if (data.events.indexOf(event) === 0) {
-                // console.log('Sample game event structure:', event);
-                // console.log('Competition details:', competition);
-              }
               
               return {
                 id: event.id,
@@ -123,7 +82,6 @@ export default function LiveGamesHeader() {
       }
       
       // If all endpoints fail, create some mock data for testing
-      // console.log('All endpoints failed, using mock data');
       setLiveGames([
         {
           id: 'mock1',
@@ -132,31 +90,31 @@ export default function LiveGamesHeader() {
           period: 2,
           clock: '8:42',
           homeTeam: {
-            name: 'Kansas City Chiefs',
-            abbreviation: 'KC',
-            logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/kc.png',
-            score: '14'
+            name: 'Los Angeles Lakers',
+            abbreviation: 'LAL',
+            logo: 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
+            score: '62'
           },
           awayTeam: {
-            name: 'Denver Broncos',
-            abbreviation: 'DEN',
-            logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/den.png',
-            score: '7'
+            name: 'Boston Celtics',
+            abbreviation: 'BOS',
+            logo: 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
+            score: '58'
           }
         }
       ]);
     };
     
     tryScoreboardAPI();
-  }, [week]);
+  }, [selectedDate]);
 
   // Get default number of games to show based on screen size
   const getDefaultGameCount = () => {
     switch (screenSize) {
-      case 'xl': return 4; // Desktop large (1280px+)
-      case 'lg': return 3; // Desktop (1024px+)
-      case 'md': return 2; // Tablet (768px+)
-      default: return 1;   // Mobile (< 768px)
+      case 'xl': return 4;
+      case 'lg': return 3;
+      case 'md': return 2;
+      default: return 1;
     }
   };
 
@@ -164,6 +122,40 @@ export default function LiveGamesHeader() {
   const handleGameClick = (gameId) => {
     setSelectedGameId(gameId);
     setShowGameDetails(true);
+  };
+
+  // Format date for display
+  const formatDate = (date) => {
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  };
+
+  // Navigate to previous day
+  const handlePreviousDay = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() - 1);
+    setSelectedDate(newDate);
+  };
+
+  // Navigate to next day
+  const handleNextDay = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + 1);
+    setSelectedDate(newDate);
+  };
+
+  // Handle date input change
+  const handleDateChange = (e) => {
+    const date = new Date(e.target.value);
+    setSelectedDate(date);
+  };
+
+  // Format date for input field (YYYY-MM-DD)
+  const formatDateForInput = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // Don't render if no games
@@ -174,51 +166,48 @@ export default function LiveGamesHeader() {
   return (
     <div className="p-6 w-full max-w-6xl mx-auto mb-8">
       <div className="mb-4">
-        <h2 className="text-2xl text-center md:text-left font-bold text-gray-800 mb-3 font-oswald">Results</h2>
-        
-        {/* Week Navigation */}
+        {/* Date Navigation */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 items-center md:items-center justify-center md:justify-between">
-          <div className="flex items-center gap-2">
-            <label className="mr-3 font-semibold text-gray-700 font-roboto-condensed">Week:</label>
+          <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
             <button 
-              onClick={() => setWeek(Math.max(1, week - 1))}
-              disabled={week <= 1}
-              className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
+              onClick={handlePreviousDay}
+              className="px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors font-semibold"
             >
-              ←
+              ← Prev
             </button>
-            <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold min-w-16 text-center font-roboto-mono">
-              {week}
+            <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-center font-roboto-mono">
+              {formatDate(selectedDate)}
             </span>
             <button 
-              onClick={() => setWeek(Math.min(23, week + 1))}
-              disabled={week >= 23}
-              className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
+              onClick={handleNextDay}
+              className="px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors font-semibold"
             >
-              →
+              Next →
             </button>
-            {week > 18 && (
-              <span className="px-3 py-2 bg-purple-100 text-purple-800 rounded-lg font-semibold text-sm font-roboto-condensed">
-                {['', 'Wild Card', 'Divisional', 'Conference', 'Pro Bowl', 'Super Bowl'][week - 18]}
-              </span>
-            )}
+            <input
+              type="date"
+              value={formatDateForInput(selectedDate)}
+              onChange={handleDateChange}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-roboto-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
           </div>
           
           {liveGames.length > getDefaultGameCount() && (
             <button
               onClick={() => setShowAllGames(!showAllGames)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-xs md:max-w-none w-full md:w-auto"
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 max-w-xs md:max-w-none w-full md:w-auto"
             >
               {showAllGames ? 'Show Less' : `Show All (${liveGames.length})`}
             </button>
           )}
         </div>
       </div>
+
       <div className={`flex flex-wrap gap-4 ${screenSize === 'mobile' || (showAllGames ? liveGames : liveGames.slice(0, getDefaultGameCount())).length === 1 ? 'justify-center' : ''}`}>
         {(showAllGames ? liveGames : liveGames.slice(0, getDefaultGameCount())).map(game => (
           <div 
             key={game.id} 
-            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 w-64 flex-shrink-0 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200"
+            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 w-64 flex-shrink-0 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all duration-200"
             onClick={() => handleGameClick(game.id)}
           >
             {/* Game Status */}
@@ -227,7 +216,7 @@ export default function LiveGamesHeader() {
                 game.status === 'in' 
                   ? 'bg-red-100 text-red-800' 
                   : game.status === 'pre'
-                  ? 'bg-blue-100 text-blue-800'
+                  ? 'bg-orange-100 text-orange-800'
                   : 'bg-gray-100 text-gray-800'
               }`}>
                 {game.status === 'in' && game.clock ? `Q${game.period} ${game.clock}` : game.statusText}
@@ -272,6 +261,7 @@ export default function LiveGamesHeader() {
       <GameDetailsModal
         gameId={selectedGameId}
         isOpen={showGameDetails}
+        sport="nba"
         onClose={() => {
           setShowGameDetails(false);
           setSelectedGameId(null);
