@@ -62,93 +62,106 @@ export default function LiveGamesHeader() {
     return () => window.removeEventListener('resize', updateScreenSize);
   }, []);
 
-  useEffect(() => {
-    // Fetch live games - try alternative endpoints
-    const tryScoreboardAPI = async () => {
-      // Determine if this is a playoff week
-      const isPlayoff = week > 18;
-      const playoffWeek = isPlayoff ? week - 18 : week;
-      const seasonType = isPlayoff ? 3 : 2; // 2 = regular season, 3 = postseason
-      
-      const endpoints = [
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${playoffWeek}&seasontype=${seasonType}`,
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${new Date().toISOString().slice(0, 10).replace(/-/g, '')}&week=${playoffWeek}`
-      ];
+  // Fetch live games - try alternative endpoints
+  const tryScoreboardAPI = async () => {
+    // Determine if this is a playoff week
+    const isPlayoff = week > 18;
+    const playoffWeek = isPlayoff ? week - 18 : week;
+    const seasonType = isPlayoff ? 3 : 2; // 2 = regular season, 3 = postseason
+    
+    const endpoints = [
+      `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${playoffWeek}&seasontype=${seasonType}`,
+      `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${new Date().toISOString().slice(0, 10).replace(/-/g, '')}&week=${playoffWeek}`
+    ];
 
-      for (const endpoint of endpoints) {
-        try {
-          const res = await fetch(endpoint);
-          if (res.ok) {
-            const data = await res.json();
-            // console.log('Successful endpoint:', endpoint);
-            // console.log('Data structure:', data);
+    for (const endpoint of endpoints) {
+      try {
+        const res = await fetch(endpoint);
+        if (res.ok) {
+          const data = await res.json();
+          // console.log('Successful endpoint:', endpoint);
+          // console.log('Data structure:', data);
+          
+          const games = data.events?.map(event => {
+            const competition = event.competitions[0];
+            const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
+            const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
             
-            const games = data.events?.map(event => {
-              const competition = event.competitions[0];
-              const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
-              const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
-              
-              // Log the complete event structure for the first game to see what's available
-              if (data.events.indexOf(event) === 0) {
-                // console.log('Sample game event structure:', event);
-                // console.log('Competition details:', competition);
+            // Log the complete event structure for the first game to see what's available
+            if (data.events.indexOf(event) === 0) {
+              // console.log('Sample game event structure:', event);
+              // console.log('Competition details:', competition);
+            }
+            
+            return {
+              id: event.id,
+              status: event.status.type.state,
+              statusText: event.status.type.shortDetail,
+              period: event.status.period,
+              clock: event.status.displayClock,
+              homeTeam: {
+                name: homeTeam.team.displayName,
+                abbreviation: homeTeam.team.abbreviation,
+                logo: homeTeam.team.logo,
+                score: homeTeam.score
+              },
+              awayTeam: {
+                name: awayTeam.team.displayName,
+                abbreviation: awayTeam.team.abbreviation,
+                logo: awayTeam.team.logo,
+                score: awayTeam.score
               }
-              
-              return {
-                id: event.id,
-                status: event.status.type.state,
-                statusText: event.status.type.shortDetail,
-                period: event.status.period,
-                clock: event.status.displayClock,
-                homeTeam: {
-                  name: homeTeam.team.displayName,
-                  abbreviation: homeTeam.team.abbreviation,
-                  logo: homeTeam.team.logo,
-                  score: homeTeam.score
-                },
-                awayTeam: {
-                  name: awayTeam.team.displayName,
-                  abbreviation: awayTeam.team.abbreviation,
-                  logo: awayTeam.team.logo,
-                  score: awayTeam.score
-                }
-              };
-            }) || [];
-            setLiveGames(games);
-            return;
-          }
-        } catch (err) {
-          // console.log(`Endpoint failed: ${endpoint}`, err);
+            };
+          }) || [];
+          setLiveGames(games);
+          return;
+        }
+      } catch (err) {
+        // console.log(`Endpoint failed: ${endpoint}`, err);
+      }
+    }
+    
+    // If all endpoints fail, create some mock data for testing
+    // console.log('All endpoints failed, using mock data');
+    setLiveGames([
+      {
+        id: 'mock1',
+        status: 'in',
+        statusText: '2nd Qtr',
+        period: 2,
+        clock: '8:42',
+        homeTeam: {
+          name: 'Kansas City Chiefs',
+          abbreviation: 'KC',
+          logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/kc.png',
+          score: '14'
+        },
+        awayTeam: {
+          name: 'Denver Broncos',
+          abbreviation: 'DEN',
+          logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/den.png',
+          score: '7'
         }
       }
-      
-      // If all endpoints fail, create some mock data for testing
-      // console.log('All endpoints failed, using mock data');
-      setLiveGames([
-        {
-          id: 'mock1',
-          status: 'in',
-          statusText: '2nd Qtr',
-          period: 2,
-          clock: '8:42',
-          homeTeam: {
-            name: 'Kansas City Chiefs',
-            abbreviation: 'KC',
-            logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/kc.png',
-            score: '14'
-          },
-          awayTeam: {
-            name: 'Denver Broncos',
-            abbreviation: 'DEN',
-            logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/den.png',
-            score: '7'
-          }
-        }
-      ]);
-    };
-    
+    ]);
+  };
+
+  // Initial fetch when week changes
+  useEffect(() => {
     tryScoreboardAPI();
   }, [week]);
+
+  // Auto-refresh for live games every 30 seconds
+  useEffect(() => {
+    const hasLiveGames = liveGames.some(game => game.status === 'in');
+    
+    if (!hasLiveGames) return; // Don't fetch if no live games
+
+    // Set up interval to refresh live game data
+    const interval = setInterval(tryScoreboardAPI, 30000);
+
+    return () => clearInterval(interval); // Cleanup on unmount or when no live games
+  }, [liveGames]);
 
   // Get default number of games to show based on screen size
   const getDefaultGameCount = () => {

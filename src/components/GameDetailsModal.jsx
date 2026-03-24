@@ -194,9 +194,54 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
       'assists': 'A',
       'steals': 'STL',
       'blocks': 'BLK',
-      'turnovers': 'TO'
+      'turnovers': 'TO',
+      // Pre-game team stats
+      'streak': 'Streak',
+      'lastTenGames': 'L10',
+      'avgPoints': 'PF',
+      'avgPointsAgainst': 'PA',
+      'avgRebounds': 'REB',
+      'avgAssists': 'A',
+      'avgBlocks': 'BLK',
+      'avgSteals': 'STL'
     };
     return nbaLabels[statName] || statName;
+  };
+
+  // Helper function to define stat display order and filter
+  const getStatOrder = () => [
+    'streak',
+    'lastTenGames',
+    'avgPoints',
+    'avgPointsAgainst',
+    'fieldGoalPct',
+    'threePointFieldGoalPct',
+    'avgRebounds',
+    'avgAssists',
+    'avgBlocks',
+    'avgSteals'
+  ];
+
+  // Helper function to reorder and filter stats
+  const reorderStats = (stats) => {
+    if (!Array.isArray(stats)) return stats;
+    
+    const statOrder = getStatOrder();
+    const statMap = {};
+    
+    // Create a map of stats by name
+    stats.forEach(stat => {
+      if (stat?.name) {
+        statMap[stat.name] = stat;
+      }
+    });
+    
+    // Reorder stats according to statOrder, only including those that exist
+    const reordered = statOrder
+      .map(statName => statMap[statName])
+      .filter(stat => stat !== undefined);
+    
+    return reordered;
   };
 
   // Filter stats for NBA (up to and including turnovers)
@@ -399,7 +444,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-2 pr-6">Team</th>
-                    {Array.isArray(boxscore.teams[0]?.statistics) && getFilteredStats(boxscore.teams[0].statistics).map((stat, idx) => (
+                    {Array.isArray(boxscore.teams[0]?.statistics) && reorderStats(boxscore.teams[0].statistics).map((stat, idx) => (
                       <th key={idx} className="text-center px-3 py-2 whitespace-nowrap">
                         {sport.toLowerCase() === 'nba' 
                           ? getStatLabel(stat?.name || stat?.abbreviation || `Stat ${idx + 1}`)
@@ -411,7 +456,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                 </thead>
                 <tbody>
                   {boxscore.teams.map((team, idx) => {
-                    const filteredTeamStats = getFilteredStats(team?.statistics);
+                    const reorderedTeamStats = reorderStats(team?.statistics);
                     return (
                       <tr key={idx} className="border-b">
                         <td className="py-2 pr-6">
@@ -427,7 +472,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                             <span className="font-medium">{team?.team?.abbreviation || 'Team'}</span>
                           </div>
                         </td>
-                        {Array.isArray(filteredTeamStats) && filteredTeamStats.map((stat, statIdx) => (
+                        {Array.isArray(reorderedTeamStats) && reorderedTeamStats.map((stat, statIdx) => (
                           <td key={statIdx} className="text-center px-3 py-2">{stat?.displayValue || stat?.value || 'N/A'}</td>
                         ))}
                       </tr>

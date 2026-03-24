@@ -10,9 +10,22 @@ export default function NBAHome() {
   const [showGameDetails, setShowGameDetails] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Initial fetch when date changes
   useEffect(() => {
     fetchGames();
   }, [selectedDate]);
+
+  // Auto-refresh for live games
+  useEffect(() => {
+    const hasLiveGames = games.some(game => game.status === 'in');
+    
+    if (!hasLiveGames) return; // Don't fetch if no live games
+
+    // Set up interval to refresh live game data every 30 seconds
+    const interval = setInterval(fetchGames, 30000);
+
+    return () => clearInterval(interval); // Cleanup on unmount or when no live games
+  }, [games]);
 
   const fetchGames = async () => {
     setLoading(true);

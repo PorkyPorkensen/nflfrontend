@@ -104,7 +104,7 @@ export default function PlayerDetailsModal({
     >
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div style={{ backgroundColor: colors.primary }} className="text-white p-6">
+        <div style={{ backgroundColor: colors.primary }} className="text-white p-6 border-b-4 border-gray-300 shadow-md">
           <button
             onClick={onClose}
             className="float-right text-white bg-black hover:opacity-80 text-2xl font-bold leading-none"
@@ -150,7 +150,7 @@ export default function PlayerDetailsModal({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Bio Info */}
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
             <h2 className="text-lg font-bold mb-3 font-oswald">Bio & Career</h2>
             {loading && (
               <p className="text-gray-600 text-sm mb-3">Loading player info...</p>

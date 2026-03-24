@@ -45,9 +45,8 @@ export default function NFLHome() {
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [showGameDetails, setShowGameDetails] = useState(false);
 
-  useEffect(() => {
-    // Fetch live games - try alternative endpoints
-    const tryScoreboardAPI = async () => {
+  // Fetch live games - try alternative endpoints
+  const tryScoreboardAPI = async () => {
       // Determine if this is a playoff week
       const isPlayoff = week > 18;
       const playoffWeek = isPlayoff ? week - 18 : week;
@@ -119,10 +118,24 @@ export default function NFLHome() {
           }
         }
       ]);
-    };
-    
+  };
+
+  // Initial fetch when week changes
+  useEffect(() => {
     tryScoreboardAPI();
   }, [week]);
+
+  // Auto-refresh for live games every 30 seconds
+  useEffect(() => {
+    const hasLiveGames = liveGames.some(game => game.status === 'in');
+    
+    if (!hasLiveGames) return; // Don't fetch if no live games
+
+    // Set up interval to refresh live game data
+    const interval = setInterval(tryScoreboardAPI, 30000);
+
+    return () => clearInterval(interval); // Cleanup on unmount or when no live games
+  }, [liveGames]);
 
   // Handle game click to show details
   const handleGameClick = (gameId) => {

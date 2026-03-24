@@ -112,7 +112,7 @@ export default function NBATeamModal({ team, isOpen, onClose, season }) {
     >
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-orange-600 text-white p-6">
+        <div className="bg-orange-600 text-white p-6 border-2 border-gray-300 shadow-md rounded-tl-lg rounded-tr-lg">
           <button
             onClick={onClose}
             className="float-right text-white  bg-black hover:opacity-80 text-2xl font-bold leading-none"

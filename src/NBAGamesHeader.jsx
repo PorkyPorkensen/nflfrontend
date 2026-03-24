@@ -28,85 +28,98 @@ export default function NBAGamesHeader() {
     return () => window.removeEventListener('resize', updateScreenSize);
   }, []);
 
-  useEffect(() => {
-    // Fetch NBA live games
-    const tryScoreboardAPI = async () => {
-      // Format date as YYYYMMDD for ESPN API
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
-      const formattedDate = `${year}${month}${day}`;
+  // Fetch NBA live games
+  const tryScoreboardAPI = async () => {
+    // Format date as YYYYMMDD for ESPN API
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const formattedDate = `${year}${month}${day}`;
 
-      const endpoints = [
-        `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}`,
-        `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}&seasontype=2`
-      ];
+    const endpoints = [
+      `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}`,
+      `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}&seasontype=2`
+    ];
 
-      for (const endpoint of endpoints) {
-        try {
-          const res = await fetch(endpoint);
-          if (res.ok) {
-            const data = await res.json();
+    for (const endpoint of endpoints) {
+      try {
+        const res = await fetch(endpoint);
+        if (res.ok) {
+          const data = await res.json();
+          
+          const games = data.events?.map(event => {
+            const competition = event.competitions[0];
+            const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
+            const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
             
-            const games = data.events?.map(event => {
-              const competition = event.competitions[0];
-              const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
-              const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
-              
-              return {
-                id: event.id,
-                status: event.status.type.state,
-                statusText: event.status.type.shortDetail,
-                period: event.status.period,
-                clock: event.status.displayClock,
-                homeTeam: {
-                  name: homeTeam.team.displayName,
-                  abbreviation: homeTeam.team.abbreviation,
-                  logo: homeTeam.team.logo,
-                  score: homeTeam.score
-                },
-                awayTeam: {
-                  name: awayTeam.team.displayName,
-                  abbreviation: awayTeam.team.abbreviation,
-                  logo: awayTeam.team.logo,
-                  score: awayTeam.score
-                }
-              };
-            }) || [];
-            setLiveGames(games);
-            return;
-          }
-        } catch (err) {
-          // console.log(`Endpoint failed: ${endpoint}`, err);
+            return {
+              id: event.id,
+              status: event.status.type.state,
+              statusText: event.status.type.shortDetail,
+              period: event.status.period,
+              clock: event.status.displayClock,
+              homeTeam: {
+                name: homeTeam.team.displayName,
+                abbreviation: homeTeam.team.abbreviation,
+                logo: homeTeam.team.logo,
+                score: homeTeam.score
+              },
+              awayTeam: {
+                name: awayTeam.team.displayName,
+                abbreviation: awayTeam.team.abbreviation,
+                logo: awayTeam.team.logo,
+                score: awayTeam.score
+              }
+            };
+          }) || [];
+          setLiveGames(games);
+          return;
+        }
+      } catch (err) {
+        // console.log(`Endpoint failed: ${endpoint}`, err);
+      }
+    }
+    
+    // If all endpoints fail, create some mock data for testing
+    setLiveGames([
+      {
+        id: 'mock1',
+        status: 'in',
+        statusText: '2nd Qtr',
+        period: 2,
+        clock: '8:42',
+        homeTeam: {
+          name: 'Los Angeles Lakers',
+          abbreviation: 'LAL',
+          logo: 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
+          score: '62'
+        },
+        awayTeam: {
+          name: 'Boston Celtics',
+          abbreviation: 'BOS',
+          logo: 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
+          score: '58'
         }
       }
-      
-      // If all endpoints fail, create some mock data for testing
-      setLiveGames([
-        {
-          id: 'mock1',
-          status: 'in',
-          statusText: '2nd Qtr',
-          period: 2,
-          clock: '8:42',
-          homeTeam: {
-            name: 'Los Angeles Lakers',
-            abbreviation: 'LAL',
-            logo: 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
-            score: '62'
-          },
-          awayTeam: {
-            name: 'Boston Celtics',
-            abbreviation: 'BOS',
-            logo: 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
-            score: '58'
-          }
-        }
-      ]);
-    };
-    
+    ]);
+  };
+
+  // Initial fetch when date changes
+  useEffect(() => {
     tryScoreboardAPI();
   }, [selectedDate]);
+
+  // Auto-refresh for live games every 30 seconds
+  useEffect(() => {
+    const hasLiveGames = liveGames.some(game => game.status === 'in');
+    
+    if (!hasLiveGames) return; // Don't fetch if no live games
+
+    // Set up interval to refresh live game data
+    const interval = setInterval(tryScoreboardAPI, 30000);
+
+    return () => clearInterval(interval); // Cleanup on unmount or when no live games
+  }, [liveGames]);
 
   // Get default number of games to show based on screen size
   const getDefaultGameCount = () => {
