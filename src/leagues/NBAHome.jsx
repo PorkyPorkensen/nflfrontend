@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import GameDetailsModal from "../components/GameDetailsModal";
+import nbaLogo from "../assets/nba.webp";
 
 export default function NBAHome() {
   const [games, setGames] = useState([]);
@@ -88,7 +89,7 @@ export default function NBAHome() {
     <div className="p-6 w-full max-w-6xl mx-auto">
       <div className="text-center mb-4">
         <div className="flex items-center flex-col justify-center md:flex-row">
-          <img src="/src/assets/nba.png" alt="NBA" className="h-16 md:h-36 w-auto" />
+          <img src={nbaLogo} alt="NBA" className="h-16 md:h-36 w-auto" />
         </div>
         <p className="text-lg text-gray-600 mb-8 mt-4">Live scores, standings, and team information.</p>
       </div>
