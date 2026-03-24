@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PlayerDetailsModal from "./PlayerDetailsModal";
 
 export default function NBATeamModal({ team, isOpen, onClose, season }) {
   const [roster, setRoster] = useState([]);
   const [teamStats, setTeamStats] = useState([]);
+  const [teamRecord, setTeamRecord] = useState(team?.record || '');
   const [loading, setLoading] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
 
+  // Reset data when team changes
+  useEffect(() => {
+    if (isOpen && team?.id) {
+      setRoster([]);
+      setTeamStats([]);
+      setTeamRecord(team?.record || '');
+      setSelectedPlayer(null);
+      setShowPlayerModal(false);
+    }
+  }, [team?.id, isOpen]);
+
   const fetchTeamData = async () => {
-    if (roster.length > 0) return; // Already loaded
-    
     setLoading(true);
     try {
       // Fetch team details for stats
@@ -25,6 +35,25 @@ export default function NBATeamModal({ team, isOpen, onClose, season }) {
         // Extract stats from the team data
         if (teamData?.team?.stats) {
           setTeamStats(teamData.team.stats);
+        }
+        
+        // Extract record if available, or construct from stats
+        if (teamData?.team?.record) {
+          // Handle record.items array structure
+          let recordArray = teamData.team.record.items || teamData.team.record;
+          if (Array.isArray(recordArray) && recordArray.length > 0) {
+            const totalRecord = recordArray.find(rec => rec.type === 'total') || recordArray[0];
+            if (totalRecord?.summary) {
+              setTeamRecord(totalRecord.summary);
+            }
+          }
+        } else if (teamData?.team?.stats) {
+          // Try to construct from stats
+          const wins = teamData.team.stats.find(s => s.label === 'Wins')?.displayValue || '0';
+          const losses = teamData.team.stats.find(s => s.label === 'Losses')?.displayValue || '0';
+          if (wins && losses) {
+            setTeamRecord(`${wins}-${losses}`);
+          }
         }
       }
 
@@ -109,7 +138,7 @@ export default function NBATeamModal({ team, isOpen, onClose, season }) {
                 {team.name}
               </h1>
               <p className="text-lg font-roboto-condensed">
-                {team.abbreviation} • {team.record}
+                {team.abbreviation} • {teamRecord}
               </p>
             </div>
           </div>

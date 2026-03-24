@@ -6,7 +6,7 @@ export default function NBAStandings() {
   const [conferences, setConferences] = useState([]);
   const [allTeams, setAllTeams] = useState([]);
   const [sortBy, setSortBy] = useState('conference'); // 'wins', 'conference', 'division'
-  const [season, setSeason] = useState(2025);
+  const [season, setSeason] = useState(2026);
   const [showAllTeams, setShowAllTeams] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [showTeamModal, setShowTeamModal] = useState(false);
@@ -131,7 +131,7 @@ export default function NBAStandings() {
       
       {/* Page Header */}
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4 font-oswald">NBA Standings - {season} Season</h1>
+        <h1 className="text-4xl font-bold text-gray-800 mb-4 font-oswald">NBA Standings - {season}-{season + 1} Season</h1>
         
         {/* Global Controls */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 mb-6">
@@ -157,6 +157,7 @@ export default function NBAStandings() {
               onChange={(e) => setSeason(Number(e.target.value))}
               className="w-full sm:w-auto px-4 py-2 border border-orange-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             >
+              <option value={2026}>2026</option>
               <option value={2025}>2025</option>
               <option value={2024}>2024</option>
               <option value={2023}>2023</option>
@@ -238,12 +239,12 @@ export default function NBAStandings() {
                                   {team.abbreviation}
                                 </div>
                                 {isPlayoff && (
-                                  <span className="px-2 py-1 text-xs font-bold rounded-full mt-1 md:mt-0 self-start bg-orange-100 text-orange-800">
+                                  <span className="hidden md:block px-2 py-1 text-xs font-bold rounded-full mt-1 md:mt-0 self-start bg-orange-100 text-orange-800">
                                     Playoff Seed
                                   </span>
                                 )}
                                 {isPlayIn && (
-                                  <span className="px-2 py-1 text-xs font-bold rounded-full mt-1 md:mt-0 self-start bg-purple-100 text-purple-800">
+                                  <span className="hidden md:block px-2 py-1 text-xs font-bold rounded-full mt-1 md:mt-0 self-start bg-purple-100 text-purple-800">
                                     <span className="md:hidden">Play-In</span>
                                     <span className="hidden md:inline">Play-In Contender</span>
                                   </span>
@@ -330,12 +331,12 @@ export default function NBAStandings() {
                           {team.abbreviation}
                         </div>
                         {isPlayoff && (
-                          <span className="px-2 py-1 text-xs font-bold rounded-full mt-1 md:mt-0 self-start bg-orange-100 text-orange-800">
+                          <span className="hidden md:block px-2 py-1 text-xs font-bold rounded-full mt-1 md:mt-0 self-start bg-orange-100 text-orange-800">
                             Playoff Seed
                           </span>
                         )}
                         {isPlayIn && (
-                          <span className="px-2 py-1 text-center text-xs font-bold rounded-full mt-1 md:mt-0 self-start bg-purple-100 text-purple-800">
+                          <span className="hidden md:block px-2 py-1 text-center text-xs font-bold rounded-full mt-1 md:mt-0 self-start bg-purple-100 text-purple-800">
                             <span className="md:hidden">Play-In</span>
                             <span className="hidden md:inline">Play-In Contender</span>
                           </span>
@@ -382,7 +383,7 @@ export default function NBAStandings() {
                 
               return (
                 <div key={conf.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                  <h3 className={`text-lg font-bold text-white p-4 font-oswald ${
+                  <h3 className={`text-lg font-bold text-white p-4 font-oswald border-b-2 border-stone-500 ${
                     conf.abbreviation === 'East' ? 'bg-blue-800' : 'bg-orange-600'
                   }`}>
                     {conf.name} ({conf.abbreviation})

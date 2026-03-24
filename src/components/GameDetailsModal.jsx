@@ -170,6 +170,11 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
   
   const { header, boxscore, gameInfo, drives, leaders, winprobability, pickcenter, broadcasts, news } = gameDetails;
   
+  // ESPN Site API Data Structure Reference:
+  // - winprobability: Array of {timeIndex, away: {winPercentage}, home: {winPercentage}} or {awayTeamWinPercentage, homeTeamWinPercentage}
+  // - pickcenter: Array of {provider: {name}, spread, overUnder, homeTeamOdds, awayTeamOdds}
+  // - header: {competitions: [{competitors: [{homeAway, team: {id, displayName, abbreviation, logo}}, ...], status: {type: {state}}}]}
+  
   const competition = header?.competitions?.[0];
   const homeTeam = competition?.competitors?.find(team => team.homeAway === 'home');
   const awayTeam = competition?.competitors?.find(team => team.homeAway === 'away');
@@ -207,6 +212,85 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
     }
     return stats;
   };
+
+  // Helper function to format team data for NBATeamModal
+  const formatTeamForModal = (teamData) => {
+    if (!teamData) return null;
+    
+    // Build the full team name from location and name
+    const teamName = teamData.displayName || `${teamData.location} ${teamData.name}` || 'Team';
+    
+    // Get record using the same logic as getTeamRecord
+    let record = '';
+    
+    // Handle record.items array structure (from team details API)
+    if (teamData.record?.items) {
+      if (Array.isArray(teamData.record.items)) {
+        const totalRecord = teamData.record.items.find(rec => rec.type === 'total') || teamData.record.items[0];
+        if (totalRecord?.summary) {
+          record = totalRecord.summary;
+        }
+      }
+    } else if (Array.isArray(teamData.record)) {
+      // Handle record as a direct array (from game summary API)
+      const totalRecord = teamData.record.find(rec => rec.type === 'total') || teamData.record[0];
+      if (totalRecord?.summary) {
+        record = totalRecord.summary;
+      }
+    } else if (teamData.record?.summary) {
+      record = teamData.record.summary;
+    } else if (typeof teamData.record === 'string') {
+      record = teamData.record;
+    } else if (teamData.statistics) {
+      const wins = teamData.statistics.find(s => s.name === 'wins')?.displayValue || '0';
+      const losses = teamData.statistics.find(s => s.name === 'losses')?.displayValue || '0';
+      record = `${wins}-${losses}`;
+    }
+    
+    return {
+      ...teamData,
+      name: teamName,
+      logo: teamData.logo || teamData.logos?.[0]?.href,
+      abbreviation: teamData.abbreviation || '',
+      record: record
+    };
+  };
+
+  // Helper function to extract team record
+  const getTeamRecord = (teamCompetitor) => {
+    if (!teamCompetitor) return '';
+    
+    // Handle record.items array structure (from team details API)
+    if (teamCompetitor.record?.items) {
+      if (Array.isArray(teamCompetitor.record.items)) {
+        const totalRecord = teamCompetitor.record.items.find(rec => rec.type === 'total') || teamCompetitor.record.items[0];
+        if (totalRecord?.summary) {
+          return totalRecord.summary;
+        }
+      }
+    }
+    
+    // Handle record as a direct array (from game summary API)
+    if (Array.isArray(teamCompetitor.record)) {
+      // Find the total record or just use the first one
+      const totalRecord = teamCompetitor.record.find(rec => rec.type === 'total') || teamCompetitor.record[0];
+      if (totalRecord?.summary) {
+        return totalRecord.summary;
+      }
+    }
+    
+    // Fallback: Check for record.summary directly
+    if (teamCompetitor?.record?.summary) {
+      return teamCompetitor.record.summary;
+    }
+    
+    // Fallback: Check if record is a string
+    if (typeof teamCompetitor.record === 'string') {
+      return teamCompetitor.record;
+    }
+    
+    return '';
+  };
   
   // console.log('Parsed teams:', { homeTeam, awayTeam });
   // console.log('Home team logo paths:', {
@@ -229,12 +313,12 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
   // });
   
   return (
-    <div className="px-4 pb-6 md:p-6 mt-4">
+    <div className="px-4 pb-6 p-6 mt-4">
       {/* Game Header */}
       <div className="mb-12 mt-2 pr-2 md:pr-8">
         <div className="flex flex-col md:flex-row items-center justify-center mb-4 space-y-4 md:space-y-0">
           {/* Away Team */}
-          <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nba' && onTeamClick(awayTeam?.team)}>
+          <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nba' && onTeamClick(formatTeamForModal(awayTeam?.team))}>
             {(awayTeam?.team?.logo || awayTeam?.team?.logos?.[0]?.href) && (
               <img 
                 src={awayTeam.team.logo || awayTeam.team.logos[0].href} 
@@ -245,7 +329,10 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
             )}
             <div className="flex-1 md:flex-none">
               <h2 className="text-lg md:text-xl font-bold font-oswald">{awayTeam?.team?.location || awayTeam?.team?.displayName || 'Away Team'}</h2>
-              <p className="text-gray-600 font-roboto-condensed text-sm">{awayTeam?.team?.name || awayTeam?.team?.shortDisplayName || ''}</p>
+              <p className="text-gray-600 font-roboto-condensed text-lg">{awayTeam?.team?.name || awayTeam?.team?.shortDisplayName || ''}</p>
+              {getTeamRecord(awayTeam) && (
+                <p className="text-gray-500 font-roboto-condensed text-sm mt-1">{getTeamRecord(awayTeam)}</p>
+              )}
             </div>
             <div className="ml-auto md:ml-4 text-2xl md:text-3xl font-bold font-roboto-mono">
               {awayTeam?.score || '0'}
@@ -256,7 +343,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
           <div className="mx-2 md:mx-4 text-gray-400 font-bold text-sm md:text-base">VS</div>
 
           {/* Home Team */}
-          <div className="flex items-center ml-0 md:ml-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nba' && onTeamClick(homeTeam?.team)}>
+          <div className="flex items-center ml-0 md:ml-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nba' && onTeamClick(formatTeamForModal(homeTeam?.team))}>
             {(homeTeam?.team?.logo || homeTeam?.team?.logos?.[0]?.href) && (
               <img 
                 src={homeTeam.team.logo || homeTeam.team.logos[0].href} 
@@ -267,7 +354,10 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
             )}
             <div className="flex-1 md:flex-none">
               <h2 className="text-lg md:text-xl font-bold font-oswald">{homeTeam?.team?.location || homeTeam?.team?.displayName || 'Home Team'}</h2>
-              <p className="text-gray-600 font-roboto-condensed text-sm">{homeTeam?.team?.name || homeTeam?.team?.shortDisplayName || ''}</p>
+              <p className="text-gray-600 font-roboto-condensed text-lg">{homeTeam?.team?.name || homeTeam?.team?.shortDisplayName || ''}</p>
+              {getTeamRecord(homeTeam) && (
+                <p className="text-gray-500 font-roboto-condensed text-sm mt-1">{getTeamRecord(homeTeam)}</p>
+              )}
             </div>
             <div className="ml-auto md:ml-4 text-2xl md:text-3xl font-bold font-roboto-mono">
               {homeTeam?.score || '0'}
@@ -299,14 +389,10 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
         </div>
       </div>
 
-      {/* Stats Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-
-
-        {/* Team Stats */}
-        {boxscore?.teams && Array.isArray(boxscore.teams) && boxscore.teams.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-300">
+      {/* Team Stats - Full width centered section */}
+      {boxscore?.teams && Array.isArray(boxscore.teams) && boxscore.teams.length > 0 && (
+        <div className="flex justify-center">
+          <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-300 w-full" style={{maxWidth: '900px'}}>
             <h3 className="text-lg font-semibold mb-3 font-oswald">Team Stats</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -351,7 +437,82 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
               </table>
             </div>
           </div>
+        </div>
+      )}
+            {/* Win Probability - Only show for live games */}
+        {winprobability && Array.isArray(winprobability) && winprobability.length > 0 && 
+         header?.competitions?.[0]?.status?.type?.state === 'in' && (
+          <div className="flex justify-center mb-4">
+            <div className="bg-gray-50 rounded-lg p-4 w-full border border-gray-300" style={{maxWidth: '400px'}}>
+              <h3 className="text-lg font-semibold mb-4 text-center">Win Probability</h3>
+              <div className="flex flex-col gap-4">
+                {/* Get the last win probability entry (current game state) */}
+                {(() => {
+                  const lastProb = winprobability[winprobability.length - 1];
+                  // Win Probability: homeWinPercentage and awayWinPercentage are 0-1 scale (multiply by 100 for percentage)
+                  let awayPct = 'N/A';
+                  let homePct = 'N/A';
+                  
+                  if (lastProb?.homeWinPercentage !== undefined) {
+                    homePct = Math.round(lastProb.homeWinPercentage * 100);
+                    // If away percentage missing, calculate as inverse of home
+                    if (lastProb?.awayWinPercentage !== undefined) {
+                      awayPct = Math.round(lastProb.awayWinPercentage * 100);
+                    } else {
+                      awayPct = Math.round((1 - lastProb.homeWinPercentage) * 100);
+                    }
+                  } else if (lastProb?.awayWinPercentage !== undefined) {
+                    awayPct = Math.round(lastProb.awayWinPercentage * 100);
+                    homePct = Math.round((1 - lastProb.awayWinPercentage) * 100);
+                  }
+                  
+                  return (
+                    <>
+                      {/* Away Team Win Probability */}
+                      <div className="flex justify-between items-center py-3">
+                        <div className="flex items-center">
+                          {(awayTeam?.team?.logo || awayTeam?.team?.logos?.[0]?.href) && (
+                            <img 
+                              src={awayTeam.team.logo || awayTeam.team.logos[0].href} 
+                              alt={awayTeam.team?.displayName || 'Away Team'} 
+                              className="w-6 h-6 mr-2"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="font-medium">{awayTeam?.team?.abbreviation || 'Away'}</span>
+                        </div>
+                        <div className="text-xl font-bold">
+                          {awayPct !== 'N/A' ? `${awayPct}%` : 'N/A'}
+                        </div>
+                      </div>
+                      
+                      {/* Home Team Win Probability */}
+                      <div className="flex justify-between items-center py-3">
+                        <div className="flex items-center">
+                          {(homeTeam?.team?.logo || homeTeam?.team?.logos?.[0]?.href) && (
+                            <img 
+                              src={homeTeam.team.logo || homeTeam.team.logos[0].href} 
+                              alt={homeTeam.team?.displayName || 'Home Team'} 
+                              className="w-6 h-6 mr-2"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="font-medium">{homeTeam?.team?.abbreviation || 'Home'}</span>
+                        </div>
+                        <div className="text-xl font-bold">
+                          {homePct !== 'N/A' ? `${homePct}%` : 'N/A'}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
         )}
+
+      {/* Stats Sections - Game Info and Betting Lines */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Game Information */}
         {gameInfo && (
@@ -404,34 +565,76 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
           </div>
         )}
 
-        {/* Win Probability - Only show for live games */}
-        {winprobability && Array.isArray(winprobability) && winprobability.length > 0 && 
-         header?.competitions?.[0]?.status?.type?.state === 'in' && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-3">Win Probability</h3>
-            <div className="space-y-2">
-              {/* Show only the last (current) win probability entries, typically the last 2 entries */}
-              {winprobability.slice(-2).map((prob, idx) => (
-                <div key={idx} className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    {prob?.team?.logo && (
-                      <img 
-                        src={prob.team.logo} 
-                        alt={prob.team?.name || 'Team'} 
-                        className="w-6 h-6 mr-2"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    )}
-                    <span>{prob?.team?.abbreviation || 'Team'}</span>
+        {/* Betting Odds / Spreads from PickCenter */}
+        {pickcenter && Array.isArray(pickcenter) && pickcenter.length > 0 && (
+          <div className="flex justify-center">
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-300 w-full" style={{maxWidth: '400px'}}>
+            <h3 className="text-lg font-semibold mb-3">Pre-Game Betting Lines</h3>
+            <div className="space-y-3">
+              {pickcenter.map((provider, idx) => (
+                <div key={idx} className="border rounded p-4 bg-white">
+                  <div className="text-sm font-semibold text-gray-700 mb-3">
+                    {provider?.provider?.name || `Sportsbook ${idx + 1}`}
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold">{prob?.winPercentage || prob?.value || 'N/A'}%</div>
+                  <div className="space-y-3">
+                    {/* Spread */}
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-xs mb-4 text-gray-500 font-medium">Spread</div>
+                        <div className="text-sm text-gray-700 font-medium">{homeTeam?.team?.abbreviation || 'H'}</div>
+                      </div>
+                      <div className="text-lg font-semibold">
+                        {provider?.spread !== undefined && provider.spread !== null
+                          ? provider.spread !== 0 
+                            ? (provider.spread > 0 ? '+' : '') + provider.spread 
+                            : 'PK'
+                          : '-'}
+                      </div>
+                    </div>
+                    
+                    {/* Over/Under */}
+                    <div className="flex justify-between items-center border-t pt-3">
+                      <div className="text-xs text-gray-500 font-medium">O/U</div>
+                      <div className="text-lg font-semibold">
+                        {provider?.overUnder !== undefined && provider.overUnder !== null
+                          ? provider.overUnder
+                          : '-'}
+                      </div>
+                    </div>
+                    
+                    {/* Moneyline Home */}
+                    <div className="flex justify-between items-center border-t pt-3">
+                      <div>
+                        <div className="text-xs mb-4 text-gray-500 font-medium">Moneyline</div>
+                        <div className="text-sm text-gray-700 font-medium">{homeTeam?.team?.abbreviation || 'H'}</div>
+                      </div>
+                      <div className="text-lg font-semibold">
+                        {provider?.homeTeamOdds?.moneyLine !== undefined
+                          ? (provider.homeTeamOdds.moneyLine > 0 ? '+' : '') + provider.homeTeamOdds.moneyLine
+                          : '-'}
+                      </div>
+                    </div>
+                    
+                    {/* Moneyline Away */}
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-700 font-medium">{awayTeam?.team?.abbreviation || 'A'}</div>
+                      <div className="text-lg font-semibold">
+                        {provider?.awayTeamOdds?.moneyLine !== undefined
+                          ? (provider.awayTeamOdds.moneyLine > 0 ? '+' : '') + provider.awayTeamOdds.moneyLine
+                          : '-'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
+            <p className="text-xs text-gray-500 mt-3">Lines from various sportsbooks. Always verify with official source.</p>
+            </div>
           </div>
         )}
+      </div>
+
+
 
         {/* Drives Summary */}
         {drives && drives.current && (
@@ -459,27 +662,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
         )}
 
         {/* Broadcasts */}
-        {broadcasts && Array.isArray(broadcasts) && broadcasts.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4 lg:col-span-2">
-            <h3 className="text-lg font-semibold mb-3">Broadcast Information</h3>
-            <div className="flex flex-wrap gap-4">
-              {broadcasts.map((broadcast, idx) => (
-                <div key={idx} className="flex items-center">
-                  {broadcast?.media?.logo && (
-                    <img 
-                      src={broadcast.media.logo} 
-                      alt={broadcast.media?.name || 'Network'} 
-                      className="w-8 h-8 mr-2"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                  )}
-                  <span className="text-sm font-medium">{broadcast?.media?.name || broadcast?.type || 'Unknown Network'}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+        {/* Removed: Broadcast Information section to make room for Win Probability */}
 
       {/* Player Box Score */}
       {boxscore?.players && Array.isArray(boxscore.players) && boxscore.players.some(pg => pg?.statistics?.[0]?.athletes?.length > 0) && (

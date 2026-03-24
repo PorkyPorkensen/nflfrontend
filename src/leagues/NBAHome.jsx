@@ -17,7 +17,12 @@ export default function NBAHome() {
   const fetchGames = async () => {
     setLoading(true);
     try {
-      const dateStr = selectedDate.toISOString().split('T')[0].replace(/-/g, '');
+      // Format date as YYYYMMDD using local date values (not UTC)
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}${month}${day}`;
+      
       const response = await fetch(
         `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`
       );
@@ -83,7 +88,7 @@ export default function NBAHome() {
     <div className="p-6 w-full max-w-6xl mx-auto">
       <div className="text-center mb-4">
         <div className="flex items-center flex-col justify-center md:flex-row">
-          <h1 className="text-4xl font-bold text-gray-800">NBA</h1>
+          <img src="/src/assets/nba.png" alt="NBA" className="h-16 md:h-36 w-auto" />
         </div>
         <p className="text-lg text-gray-600 mb-8 mt-4">Live scores, standings, and team information.</p>
       </div>
