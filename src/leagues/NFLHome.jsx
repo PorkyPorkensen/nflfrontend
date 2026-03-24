@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import GameDetailsModal from "../components/GameDetailsModal";
 import { FEATURES } from "../config/features";
-import nflLogo from "../assets/NFL-logo.png";
 
 
 export default function NFLHome() {
@@ -137,7 +136,7 @@ export default function NFLHome() {
     <div className="p-6 w-full max-w-6xl mx-auto">
       <div className="text-center mb-4">
         <div className="flex items-center flex-col justify-center md:flex-row">
-          <img src={nflLogo} alt="NFL" className="h-24 md:h-48 w-auto" />
+          <img src="/NFL-logo.png" alt="NFL" className="h-24 md:h-48 w-auto" />
         </div>
         <p className="text-lg text-gray-600 mb-4 mt-8">Live scores, standings, and playoff bracket creation.</p>
       </div>
