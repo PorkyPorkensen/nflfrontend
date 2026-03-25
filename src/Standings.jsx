@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TeamModal from './TeamModal';
 import LiveGamesHeader from "./LiveGamesHeader";
 
 export default function Standings() {
+  const navigate = useNavigate();
   const [conferences, setConferences] = useState([]);
   const [allTeams, setAllTeams] = useState([]);
   const [sortBy, setSortBy] = useState('conference'); // 'wins', 'conference', 'division'
@@ -110,8 +112,7 @@ export default function Standings() {
   const sortedTeams = getSortedTeams();
 
   const handleTeamClick = (team) => {
-    setSelectedTeam(team);
-    setShowTeamModal(true);
+    navigate(`/nfl/team/${team.id}`);
   };
 
   return (
@@ -124,12 +125,12 @@ export default function Standings() {
         {/* Global Controls */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 mb-6">
           {/* Sort Controls */}
-          <div className="flex flex-col sm:flex-row items-center">
+          <div className="flex flex-col items-center sm:flex-row sm:items-center w-full sm:w-auto justify-center sm:justify-start">
             <label className="mb-2 sm:mb-0 sm:mr-3 font-semibold text-gray-700 font-roboto-condensed">Sort by:</label>
             <select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2 border border-green-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-44 sm:w-auto px-4 py-2 border border-green-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 max-w-xs"
             >
               <option value="conference">Conference</option>
               <option value="wins">Power Rankings</option>
@@ -143,7 +144,7 @@ export default function Standings() {
             <select 
               value={season} 
               onChange={(e) => setSeason(Number(e.target.value))}
-              className="w-full sm:w-auto px-4 py-2 border border-green-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-44 sm:w-auto px-4 py-2 border border-green-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value={2025}>2025</option>
               <option value={2024}>2024</option>

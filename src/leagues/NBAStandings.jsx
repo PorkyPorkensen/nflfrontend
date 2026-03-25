@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import NBATeamModal from '../components/NBATeamModal';
+import { useNavigate } from "react-router-dom";
 import NBAGamesHeader from '../NBAGamesHeader';
 
 export default function NBAStandings() {
+  const navigate = useNavigate();
   const [conferences, setConferences] = useState([]);
   const [allTeams, setAllTeams] = useState([]);
   const [sortBy, setSortBy] = useState('conference'); // 'wins', 'conference', 'division'
   const [season, setSeason] = useState(2026);
   const [showAllTeams, setShowAllTeams] = useState(true);
-  const [selectedTeam, setSelectedTeam] = useState(null);
-  const [showTeamModal, setShowTeamModal] = useState(false);
+
 
   useEffect(() => {
     fetch(`https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings?season=${season}`)
@@ -103,8 +103,7 @@ export default function NBAStandings() {
   const sortedTeams = getSortedTeams();
 
   const handleTeamClick = (team) => {
-    setSelectedTeam(team);
-    setShowTeamModal(true);
+    navigate(`/nba/team/${team.id}`);
   };
 
   // Get playoff and play-in teams (6 direct playoff spots, 4 play-in spots per conference)
@@ -119,7 +118,6 @@ export default function NBAStandings() {
   };
 
   const { playoffTeams, playInTeams } = getPlayoffInfo();
-  const allQualifiedTeams = [...playoffTeams, ...playInTeams];
 
   return (
     <div className="p-6 w-full max-w-6xl mx-auto">
@@ -131,7 +129,7 @@ export default function NBAStandings() {
       
       {/* Page Header */}
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4 font-oswald">NBA Standings - {season}-{season + 1} Season</h1>
+        <h1 className="text-4xl font-bold text-gray-800 mb-4 font-oswald">NBA Standings</h1>
         
         {/* Global Controls */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 mb-6">
@@ -141,7 +139,7 @@ export default function NBAStandings() {
             <select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2 border border-orange-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-44 sm:w-auto px-4 py-2 border border-orange-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             >
               <option value="conference">Conference</option>
               <option value="wins">Power Rankings</option>
@@ -155,7 +153,7 @@ export default function NBAStandings() {
             <select 
               value={season} 
               onChange={(e) => setSeason(Number(e.target.value))}
-              className="w-full sm:w-auto px-4 py-2 border border-orange-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-44 sm:w-auto px-4 py-2 border border-orange-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             >
               <option value={2026}>2026</option>
               <option value={2025}>2025</option>
@@ -427,14 +425,6 @@ export default function NBAStandings() {
           </div>
         </div>
       </div>
-      
-      {/* Team Modal */}
-      <NBATeamModal 
-        team={selectedTeam} 
-        isOpen={showTeamModal} 
-        onClose={() => setShowTeamModal(false)}
-        season={season}
-      />
     </div>
   );
 }

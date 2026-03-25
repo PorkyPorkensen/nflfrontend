@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PlayerDetailsModal from "./PlayerDetailsModal";
-import NBATeamModal from "./NBATeamModal";
 
 export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl' }) {
+  const navigate = useNavigate();
   const [gameDetails, setGameDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
-  const [selectedTeam, setSelectedTeam] = useState(null);
-  const [showTeamModal, setShowTeamModal] = useState(false);
 
   // Get sport-specific colors
   const getSportColors = () => {
@@ -109,7 +108,7 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
         )}
 
         {gameDetails && !loading && !error && (
-          <GameDetailsContent gameDetails={gameDetails} onClose={onClose} sport={sport} colors={colors} onPlayerClick={(player, teamId, stats) => {
+          <GameDetailsContent gameDetails={gameDetails} onClose={onClose} sport={sport} colors={colors} navigate={navigate} onPlayerClick={(player, teamId, stats) => {
             setSelectedPlayer(player);
             setSelectedTeamId(teamId);
             // Format stats for display
@@ -120,8 +119,11 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
             setSelectedPlayer({ ...player, gameStats });
             setShowPlayerModal(true);
           }} onTeamClick={(team) => {
-            setSelectedTeam(team);
-            setShowTeamModal(true);
+            if (sport.toLowerCase() === 'nfl') {
+              navigate(`/nfl/team/${team.id}`, { state: { teamData: team } });
+            } else {
+              navigate(`/nba/team/${team.id}`, { state: { teamData: team } });
+            }
           }} />
         )}
         
@@ -138,18 +140,6 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
           teamId={selectedTeamId}
           gameStats={selectedPlayer?.gameStats}
         />
-
-        {/* Team Modal - Only show for NBA */}
-        {sport.toLowerCase() === 'nba' && (
-          <NBATeamModal
-            team={selectedTeam}
-            isOpen={showTeamModal}
-            onClose={() => {
-              setShowTeamModal(false);
-              setSelectedTeam(null);
-            }}
-          />
-        )}
         
         {/* Fallback content if detailed API fails but we still want to show something */}
         {!gameDetails && !loading && error && (
@@ -164,11 +154,17 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
   );
 }
 
-function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg: 'blue', text: 'blue' }, onPlayerClick = () => {}, onTeamClick = () => {} }) {
+function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg: 'blue', text: 'blue' }, navigate, onPlayerClick = () => {}, onTeamClick = () => {} }) {
   // Log the full structure to understand the data better
   // console.log('Full gameDetails structure:', gameDetails);
   
   const { header, boxscore, gameInfo, drives, leaders, winprobability, pickcenter, broadcasts, news } = gameDetails;
+  
+  // Enhanced team click handler for NFL that just passes the team ID
+  const handleNFLTeamClick = (basicTeam) => {
+    if (!basicTeam?.id) return;
+    navigate(`/nfl/team/${basicTeam.id}`);
+  };
   
   // ESPN Site API Data Structure Reference:
   // - winprobability: Array of {timeIndex, away: {winPercentage}, home: {winPercentage}} or {awayTeamWinPercentage, homeTeamWinPercentage}
@@ -222,26 +218,41 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
     'avgSteals'
   ];
 
+  // Helper function to detect if stats are pre-game stats (vs live game stats)
+  const isPreGameStats = (stats) => {
+    if (!Array.isArray(stats) || stats.length === 0) return false;
+    // Pre-game stats include names like 'streak', 'avgPoints', 'lastTenGames', etc.
+    return stats.some(stat => 
+      stat?.name && ['streak', 'lastTenGames', 'avgPoints', 'avgPointsAgainst', 'avgRebounds', 'avgAssists', 'avgBlocks', 'avgSteals'].includes(stat.name)
+    );
+  };
+
   // Helper function to reorder and filter stats
   const reorderStats = (stats) => {
     if (!Array.isArray(stats)) return stats;
     
-    const statOrder = getStatOrder();
-    const statMap = {};
+    // If these are pre-game stats, reorder them
+    if (isPreGameStats(stats)) {
+      const statOrder = getStatOrder();
+      const statMap = {};
+      
+      // Create a map of stats by name
+      stats.forEach(stat => {
+        if (stat?.name) {
+          statMap[stat.name] = stat;
+        }
+      });
+      
+      // Reorder stats according to statOrder, only including those that exist
+      const reordered = statOrder
+        .map(statName => statMap[statName])
+        .filter(stat => stat !== undefined);
+      
+      return reordered;
+    }
     
-    // Create a map of stats by name
-    stats.forEach(stat => {
-      if (stat?.name) {
-        statMap[stat.name] = stat;
-      }
-    });
-    
-    // Reorder stats according to statOrder, only including those that exist
-    const reordered = statOrder
-      .map(statName => statMap[statName])
-      .filter(stat => stat !== undefined);
-    
-    return reordered;
+    // For live game stats, return as-is
+    return stats;
   };
 
   // Filter stats for NBA (up to and including turnovers)
@@ -363,7 +374,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
       <div className="mb-12 mt-2 pr-2 md:pr-8">
         <div className="flex flex-col md:flex-row items-center justify-center mb-4 space-y-4 md:space-y-0">
           {/* Away Team */}
-          <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nba' && onTeamClick(formatTeamForModal(awayTeam?.team))}>
+          <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nfl' ? handleNFLTeamClick(awayTeam?.team) : onTeamClick(awayTeam?.team || formatTeamForModal(awayTeam?.team))}>
             {(awayTeam?.team?.logo || awayTeam?.team?.logos?.[0]?.href) && (
               <img 
                 src={awayTeam.team.logo || awayTeam.team.logos[0].href} 
@@ -388,7 +399,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
           <div className="mx-2 md:mx-4 text-gray-400 font-bold text-sm md:text-base">VS</div>
 
           {/* Home Team */}
-          <div className="flex items-center ml-0 md:ml-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nba' && onTeamClick(formatTeamForModal(homeTeam?.team))}>
+          <div className="flex items-center ml-0 md:ml-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nfl' ? handleNFLTeamClick(homeTeam?.team) : onTeamClick(homeTeam?.team || formatTeamForModal(homeTeam?.team))}>
             {(homeTeam?.team?.logo || homeTeam?.team?.logos?.[0]?.href) && (
               <img 
                 src={homeTeam.team.logo || homeTeam.team.logos[0].href} 
