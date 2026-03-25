@@ -175,6 +175,27 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
   const homeTeam = competition?.competitors?.find(team => team.homeAway === 'home');
   const awayTeam = competition?.competitors?.find(team => team.homeAway === 'away');
 
+  // ESPN does not always return the same betting shape across games/seasons.
+  const pickcenterLines = Array.isArray(pickcenter)
+    ? pickcenter
+    : (pickcenter ? [pickcenter] : []);
+  const competitionOddsLines = Array.isArray(competition?.odds)
+    ? competition.odds.map((odds) => ({
+        provider: {
+          name: odds?.provider?.name || odds?.provider?.displayName || 'Sportsbook'
+        },
+        spread: odds?.spread,
+        overUnder: odds?.overUnder,
+        homeTeamOdds: {
+          moneyLine: odds?.homeTeamOdds?.moneyLine
+        },
+        awayTeamOdds: {
+          moneyLine: odds?.awayTeamOdds?.moneyLine
+        }
+      }))
+    : [];
+  const bettingLines = pickcenterLines.length > 0 ? pickcenterLines : competitionOddsLines;
+
   // Helper function to get custom stat label for NBA
   const getStatLabel = (statName) => {
     const nbaLabels = {
@@ -621,13 +642,14 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
           </div>
         )}
 
-        {/* Betting Odds / Spreads from PickCenter */}
-        {pickcenter && Array.isArray(pickcenter) && pickcenter.length > 0 && (
+        {/* Betting Odds / Spreads */}
+        {(bettingLines.length > 0 || sport.toLowerCase() === 'nfl') && (
           <div className="flex justify-center">
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-300 w-full" style={{maxWidth: '400px'}}>
             <h3 className="text-lg font-semibold mb-3">Pre-Game Betting Lines</h3>
+            {bettingLines.length > 0 ? (
             <div className="space-y-3">
-              {pickcenter.map((provider, idx) => (
+              {bettingLines.map((provider, idx) => (
                 <div key={idx} className="border rounded p-4 bg-white">
                   <div className="text-sm font-semibold text-gray-700 mb-3">
                     {provider?.provider?.name || `Sportsbook ${idx + 1}`}
@@ -684,6 +706,9 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                 </div>
               ))}
             </div>
+            ) : (
+              <p className="text-sm text-gray-600">No betting lines are currently available for this NFL game.</p>
+            )}
             <p className="text-xs text-gray-500 mt-3">Lines from various sportsbooks. Always verify with official source.</p>
             </div>
           </div>

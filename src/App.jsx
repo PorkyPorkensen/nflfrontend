@@ -8,6 +8,7 @@ import NBAStandings from './leagues/NBAStandings';
 import BracketMaker from './BracketMaker';
 import Leaderboard from './Leaderboard';
 import PlayerStats from './PlayerStats';
+import NBAPlayerStats from './NBAPlayerStats';
 import TeamPage from './TeamPage';
 import NBATeamPage from './NBATeamPage';
 import { AuthProvider } from './firebase/AuthContext';
@@ -37,6 +38,7 @@ export default function App() {
               <Route index element={<NBAHome />} />
               <Route path="standings" element={<NBAStandings />} />
               <Route path="team/:teamId" element={<NBATeamPage />} />
+              <Route path="player/:playerId" element={<NBAPlayerStats />} />
             </Route>
 
             {/* Legacy redirects for existing bookmarks */}
