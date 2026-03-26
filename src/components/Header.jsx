@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from './firebase/AuthContext';
-import AuthModal from './components/AuthModal';
-import { FEATURES } from './config/features';
+import { useAuth } from '../firebase/AuthContext';
+import AuthModal from './AuthModal';
+import { FEATURES } from '../config/features';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,6 +15,7 @@ export default function Header() {
   const getCurrentLeague = () => {
     if (location.pathname.startsWith('/nfl')) return 'nfl';
     if (location.pathname.startsWith('/nba')) return 'nba';
+    if (location.pathname.startsWith('/nhl')) return 'nhl';
     return null;
   };
 
@@ -112,6 +113,16 @@ export default function Header() {
                 >
                   🏀 NBA
                 </NavLink>
+                <NavLink
+                  to="/nhl"
+                  className={({ isActive }) =>
+                    `block w-full text-left px-4 py-3 hover:bg-gray-50 rounded-b-lg font-medium ${
+                      isActive ? 'bg-gray-50 text-gray-700' : 'text-gray-700'
+                    }`
+                  }
+                >
+                  🏒 NHL
+                </NavLink>
               </div>
             </div>
 
@@ -179,7 +190,27 @@ export default function Header() {
                 </NavLink>
               </>
             )}
+
+            {/* NHL League-Specific Links */}
+            {currentLeague === 'nhl' && (
+              <>
+                <NavLink
+                  to="/nhl/standings"
+                  className={({ isActive }) =>
+                    `px-3 py-2 lg:px-4 rounded-lg font-medium transition-colors text-sm lg:text-base ${
+                      isActive
+                        ? 'bg-gray-100 text-gray-700 border border-gray-200 underline'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+                    }`
+                  }
+                >
+                  Standings
+                </NavLink>
+              </>
+            )}
           </nav>
+
+          
 
           {/* Auth Section - Desktop */}
           <div className="hidden md:flex items-center space-x-4">
@@ -271,6 +302,19 @@ export default function Header() {
               >
                 🏀 NBA
               </NavLink>
+              <NavLink
+                to="/nhl"
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                    isActive
+                      ? 'bg-gray-100 text-gray-700 border border-gray-200'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`
+                }
+              >
+                🏒 NHL
+              </NavLink>
             </div>
 
             {/* Conditional League-Specific Links for Mobile */}
@@ -332,6 +376,25 @@ export default function Header() {
                     `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
                       isActive
                         ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                    }`
+                  }
+                >
+                  Standings
+                </NavLink>
+              </>
+            )}
+
+            {/* NHL League-Specific Links for Mobile */}
+            {currentLeague === 'nhl' && (
+              <>
+                <NavLink
+                  to="/nhl/standings"
+                  onClick={closeMenu}
+                  className={({ isActive }) =>
+                    `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                      isActive
+                        ? 'bg-gray-100 text-gray-700 border border-gray-200'
                         : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                     }`
                   }

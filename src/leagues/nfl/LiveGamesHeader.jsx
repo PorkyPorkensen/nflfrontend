@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import GameDetailsModal from "./components/GameDetailsModal";
+import GameDetailsModal from "../../components/GameDetailsModal";
 
 export default function LiveGamesHeader() {
   const [liveGames, setLiveGames] = useState([]);

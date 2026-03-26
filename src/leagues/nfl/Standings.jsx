@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import TeamModal from './TeamModal';
+import TeamModal from '../../TeamModal';
 import LiveGamesHeader from "./LiveGamesHeader";
 
 export default function Standings() {

@@ -3,8 +3,8 @@ import Confetti from "react-confetti";
 import html2canvas from "html2canvas";
 import BracketSubmission from "./BracketSubmission";
 import UserBrackets from "./UserBrackets";
-import { useAuth } from './firebase/AuthContext';
-import { API_ENDPOINTS } from './config/api';
+import { useAuth } from '../firebase/AuthContext';
+import { API_ENDPOINTS } from '../config/api';
 
 // Championship Modal Component
 const ChampionshipModal = ({ isOpen, champion, bracketState, onClose, onSubmitBracket }) => {

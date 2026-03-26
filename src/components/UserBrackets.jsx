@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from './firebase/AuthContext';
-import { API_ENDPOINTS, makeAuthenticatedRequest } from './config/api';
+import { useAuth } from '../firebase/AuthContext';
+import { API_ENDPOINTS, makeAuthenticatedRequest } from '../config/api';
 
 const UserBrackets = ({ refreshTrigger = 0 }) => {
   const [brackets, setBrackets] = useState([]);

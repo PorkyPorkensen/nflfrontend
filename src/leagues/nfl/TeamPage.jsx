@@ -177,11 +177,15 @@ export default function TeamPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Header */}
-      <div className="bg-blue-600 text-white py-12 px-4">
-        <div className="max-w-6xl mx-auto">
+      <div className="py-8 px-4">
+        <div
+          className="max-w-6xl mx-auto text-white rounded-xl overflow-hidden"
+          style={{ backgroundImage: 'url(/fbBg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        >
+        <div className="bg-black/50 px-8 py-10">
           <button
             onClick={() => navigate(-1)}
-            className="mb-4 text-white hover:opacity-80 transition"
+            className="mb-4 text-white bg-blue-600 hover:opacity-80 transition"
           >
             ← Back
           </button>
@@ -217,6 +221,7 @@ export default function TeamPage() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 

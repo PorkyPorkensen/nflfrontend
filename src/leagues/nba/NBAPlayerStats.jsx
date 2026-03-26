@@ -172,7 +172,7 @@ export default function NBAPlayerStats() {
         }
         if (bioData.experience?.years !== undefined) {
           bioStats.push({
-            displayName: 'Experience',
+            displayName: 'NBA Experience',
             displayValue: bioData.experience.years > 0 ? `${bioData.experience.years} yrs` : 'Rookie',
             name: 'experience'
           });
@@ -232,11 +232,15 @@ export default function NBAPlayerStats() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="bg-orange-500 text-white py-12 px-4">
-        <div className="max-w-6xl mx-auto">
+      <div className="py-8 px-4">
+        <div
+          className="max-w-6xl mx-auto text-white rounded-xl overflow-hidden"
+          style={{ backgroundImage: 'url(/bbBg.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        >
+        <div className="bg-black/50 px-8 py-10">
           <button
             onClick={() => navigate(-1)}
-            className="mb-4 text-white hover:opacity-80 transition bg-orange-700 px-4 py-2 rounded-lg"
+            className="mb-4 text-white hover:opacity-80 transition bg-orange-500 px-4 py-2 rounded-lg"
           >
             ← Back
           </button>
@@ -277,6 +281,7 @@ export default function NBAPlayerStats() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -324,20 +329,13 @@ export default function NBAPlayerStats() {
             </div>
           )}
 
-          {(editorialNote || playerData.experience?.years !== undefined) && (
+          {editorialNote && (
             <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
               <div className="bg-orange-50 px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-bold font-oswald">About This Player</h3>
+                <h3 className="text-lg font-bold font-oswald">Player News</h3>
               </div>
               <div className="p-6 space-y-3 text-gray-700 font-roboto-condensed leading-relaxed">
                 {editorialNote && <p>{editorialNote}</p>}
-                {playerData.experience?.years !== undefined && (
-                  <p>
-                    <strong>Experience:</strong> {playerData.experience.years > 0
-                      ? `${playerData.experience.years} years in the NBA`
-                      : 'Rookie'}
-                  </p>
-                )}
                 <p>
                   For full game logs and advanced splits, visit{' '}
                   <a

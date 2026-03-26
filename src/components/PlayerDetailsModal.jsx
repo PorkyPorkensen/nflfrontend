@@ -26,7 +26,9 @@ export default function PlayerDetailsModal({
     
     try {
       const sportPath = sport.toLowerCase() === 'nba' 
-        ? 'basketball/nba' 
+        ? 'basketball/nba'
+        : sport.toLowerCase() === 'nhl'
+        ? 'hockey/nhl'
         : 'football/nfl';
       
       // Fetch team roster
@@ -45,17 +47,23 @@ export default function PlayerDetailsModal({
       if (rosterData?.athletes) {
         console.log('Roster athletes:', rosterData.athletes);
         
+        // Some sports/seasons group players by category (NHL, NFL off-season, etc.), so flatten if needed
+        let athletesArray = rosterData.athletes;
+        if (rosterData.athletes[0]?.items) {
+          athletesArray = rosterData.athletes.flatMap(group => group.items || []);
+        }
+        
         // Find player by matching multiple criteria
         let playerData = null;
         
         // First try by ID if available
         if (player.id && player.id.indexOf('-') === -1) {
-          playerData = rosterData.athletes.find(a => a.id === player.id);
+          playerData = athletesArray.find(a => a.id === player.id);
         }
         
         // If not found, try by displayName
         if (!playerData && player.displayName) {
-          playerData = rosterData.athletes.find(a => 
+          playerData = athletesArray.find(a => 
             (a.displayName === player.displayName) || 
             (a.name === player.displayName)
           );
@@ -63,7 +71,7 @@ export default function PlayerDetailsModal({
         
         // If still not found, try by jersey and position
         if (!playerData && player.jersey) {
-          playerData = rosterData.athletes.find(a => 
+          playerData = athletesArray.find(a => 
             a.jersey === player.jersey && 
             (typeof a.position === 'string' ? 
               a.position === player.position : 
@@ -75,9 +83,9 @@ export default function PlayerDetailsModal({
         
         // Log what we found
         if (!playerData) {
-          console.log('Exact match not found. Available athlete IDs:', rosterData.athletes.map(a => a.id));
-          console.log('Available Names:', rosterData.athletes.map(a => a.displayName || a.name));
-          console.log('Available Jerseys:', rosterData.athletes.map(a => a.jersey));
+          console.log('Exact match not found. Available athlete IDs:', athletesArray.map(a => a.id));
+          console.log('Available Names:', athletesArray.map(a => a.displayName || a.name));
+          console.log('Available Jerseys:', athletesArray.map(a => a.jersey));
           // Don't set error - just means we couldn't find them in the roster, which is fine
         }
         
@@ -101,6 +109,9 @@ export default function PlayerDetailsModal({
 
   if (!isOpen || !player) return null;
 
+  console.log('Player position object:', player.position);
+  console.log('Player athlete position:', player.athlete?.position);
+
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -111,9 +122,11 @@ export default function PlayerDetailsModal({
     switch(sport.toLowerCase()) {
       case 'nba':
         return { primary: '#f97316', bg: 'orange' };
+      case 'nhl':
+        return { primary: '#374151', bg: 'gray' };
       case 'nfl':
       default:
-        return { primary: '#3b82f6', bg: 'blue' };
+        return { primary: '#2457a8', bg: 'blue' };
     }
   };
 
@@ -126,14 +139,22 @@ export default function PlayerDetailsModal({
     >
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div style={{ backgroundColor: colors.primary }} className="text-white p-6 border-b-4 border-gray-300 shadow-md">
-          <button
-            onClick={onClose}
-            className="float-right text-white bg-black hover:opacity-80 text-2xl font-bold leading-none"
-            aria-label="Close"
-          >
-            ×
-          </button>
+        <div
+          className="text-white rounded-tl-lg rounded-tr-lg overflow-hidden"
+          style={{
+            backgroundImage: `url(${sport.toLowerCase() === 'nba' ? '/bbBg.webp' : sport.toLowerCase() === 'nhl' ? '/hBg.png' : '/fbBg.jpg'})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
+        >
+          <div className="bg-black/50 p-6">
+            <button
+              onClick={onClose}
+              className="float-right text-black bg-white hover:opacity-80 text-xl m-0 p-0 font-bold rounded-full w-8 h-8 flex items-center justify-center"
+              aria-label="Close"
+            >
+              <p className="pb-1">×</p>
+            </button>
           
           <div className="flex items-start gap-4">
             {/* Player Headshot */}
@@ -153,7 +174,11 @@ export default function PlayerDetailsModal({
               </h1>
               <div className="space-y-1 font-roboto-condensed">
                 <p className="text-lg">
-                  #{player.jersey || player.athlete?.jersey || 'N/A'} • {typeof player.position === 'string' ? player.position : (player.position?.abbreviation || player.athlete?.position?.abbreviation || player.athlete?.position?.displayName || 'N/A')}
+                  #{player.jersey || player.athlete?.jersey || 'N/A'} • {
+                    typeof player.position === 'string' 
+                      ? player.position 
+                      : (seasonStats?.position?.abbreviation || seasonStats?.position?.displayName || seasonStats?.position?.name || player.position?.displayName || player.position?.abbreviation || player.position?.name || player.athlete?.position?.displayName || player.athlete?.position?.abbreviation || player.athlete?.position?.name || 'N/A')
+                  }
                 </p>
                 {(player.birth?.date || player.athlete?.birth?.date) && (
                   <p className="text-sm opacity-90">
@@ -167,6 +192,7 @@ export default function PlayerDetailsModal({
               </div>
             </div>
           </div>
+            </div>
         </div>
 
         {/* Content */}
@@ -190,7 +216,7 @@ export default function PlayerDetailsModal({
                   <p className="text-gray-800">
                     {typeof player.position === 'string' ? 
                       player.position : 
-                      (player.position?.abbreviation || player.athlete?.position?.abbreviation || 'N/A')
+                      (player.position?.abbreviation || player.position?.name || player.athlete?.position?.abbreviation || player.athlete?.position?.name || player.athlete?.position?.displayName || 'N/A')
                     }
                   </p>
                 </div>
@@ -274,8 +300,80 @@ export default function PlayerDetailsModal({
             {sport.toLowerCase() === 'nfl' && player.id && (
               <button
                 onClick={() => {
+                  // Normalize player data - flatten athlete nested structure
+                  const normalizedPlayer = {
+                    ...player,
+                    ...(player.athlete || {}),
+                    id: player.id || player.athlete?.id,
+                    displayName: player.displayName || player.athlete?.displayName,
+                    jersey: player.jersey || player.athlete?.jersey,
+                    position: player.position || player.athlete?.position,
+                    headshot: player.headshot || player.athlete?.headshot,
+                    college: player.college || player.athlete?.college,
+                    team: player.team || player.athlete?.team,
+                    birth: player.birth || player.athlete?.birth,
+                    height: player.height || player.athlete?.displayHeight,
+                    weight: player.weight || player.athlete?.displayWeight,
+                  };
                   navigate(`/nfl/player/${player.id}`, {
-                    state: { playerData: player }
+                    state: { playerData: normalizedPlayer }
+                  });
+                  onClose();
+                }}
+                style={{ backgroundColor: colors.primary }}
+                className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-opacity font-medium"
+              >
+                View Full Stats
+              </button>
+            )}
+            {sport.toLowerCase() === 'nba' && player.id && (
+              <button
+                onClick={() => {
+                  // Normalize player data - flatten athlete nested structure
+                  const normalizedPlayer = {
+                    ...player,
+                    ...(player.athlete || {}),
+                    id: player.id || player.athlete?.id,
+                    displayName: player.displayName || player.athlete?.displayName,
+                    jersey: player.jersey || player.athlete?.jersey,
+                    position: player.position || player.athlete?.position,
+                    headshot: player.headshot || player.athlete?.headshot,
+                    college: player.college || player.athlete?.college,
+                    team: player.team || player.athlete?.team,
+                    birth: player.birth || player.athlete?.birth,
+                    height: player.height || player.athlete?.displayHeight,
+                    weight: player.weight || player.athlete?.displayWeight,
+                  };
+                  navigate(`/nba/player/${player.id}`, {
+                    state: { playerData: normalizedPlayer }
+                  });
+                  onClose();
+                }}
+                style={{ backgroundColor: colors.primary }}
+                className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-opacity font-medium"
+              >
+                View Full Stats
+              </button>
+            )}
+            {sport.toLowerCase() === 'nhl' && player.id && (
+              <button
+                onClick={() => {
+                  // Normalize player data - flatten athlete nested structure
+                  const normalizedPlayer = {
+                    ...player,
+                    ...(player.athlete || {}),
+                    id: player.id || player.athlete?.id,
+                    displayName: player.displayName || player.athlete?.displayName,
+                    jersey: player.jersey || player.athlete?.jersey,
+                    position: player.position || player.athlete?.position,
+                    headshot: player.headshot || player.athlete?.headshot,
+                    team: player.team || player.athlete?.team,
+                    birth: player.birth || player.athlete?.birth,
+                    height: player.height || player.athlete?.displayHeight,
+                    weight: player.weight || player.athlete?.displayWeight,
+                  };
+                  navigate(`/nhl/player/${player.id}`, {
+                    state: { playerData: normalizedPlayer }
                   });
                   onClose();
                 }}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import GameDetailsModal from "../components/GameDetailsModal";
+import GameDetailsModal from "../../components/GameDetailsModal";
 
 export default function NBAHome() {
   const [games, setGames] = useState([]);

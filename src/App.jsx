@@ -1,16 +1,20 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './Home';
-import NFLHome from './leagues/NFLHome';
-import NBAHome from './leagues/NBAHome';
-import Standings from './Standings';
-import NBAStandings from './leagues/NBAStandings';
-import BracketMaker from './BracketMaker';
-import Leaderboard from './Leaderboard';
-import PlayerStats from './PlayerStats';
-import NBAPlayerStats from './NBAPlayerStats';
-import TeamPage from './TeamPage';
-import NBATeamPage from './NBATeamPage';
+import NFLHome from './leagues/nfl/NFLHome';
+import NBAHome from './leagues/nba/NBAHome';
+import NHLHome from './leagues/nhl/NHLHome';
+import Standings from './leagues/nfl/Standings';
+import NBAStandings from './leagues/nba/NBAStandings';
+import NHLStandings from './leagues/nhl/NHLStandings';
+import BracketMaker from './components/BracketMaker';
+import Leaderboard from './components/Leaderboard';
+import PlayerStats from './leagues/nfl/PlayerStats';
+import NBAPlayerStats from './leagues/nba/NBAPlayerStats';
+import TeamPage from './leagues/nfl/TeamPage';
+import NBATeamPage from './leagues/nba/NBATeamPage';
+import NHLTeamPage from './leagues/nhl/NHLTeamPage';
+import NHLPlayerStats from './leagues/nhl/NHLPlayerStats';
 import { AuthProvider } from './firebase/AuthContext';
 import { FEATURES } from './config/features';
 
@@ -39,6 +43,14 @@ export default function App() {
               <Route path="standings" element={<NBAStandings />} />
               <Route path="team/:teamId" element={<NBATeamPage />} />
               <Route path="player/:playerId" element={<NBAPlayerStats />} />
+            </Route>
+
+            {/* NHL routes */}
+            <Route path="nhl">
+              <Route index element={<NHLHome />} />
+              <Route path="standings" element={<NHLStandings />} />
+              <Route path="team/:teamId" element={<NHLTeamPage />} />
+              <Route path="player/:playerId" element={<NHLPlayerStats />} />
             </Route>
 
             {/* Legacy redirects for existing bookmarks */}

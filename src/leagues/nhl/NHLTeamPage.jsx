@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-const STATS_ORDER = ['wins', 'losses', 'winPercent', 'pointsFor', 'pointsAgainst', 'differential', 'streak', 'gamesBehind'];
+const STATS_ORDER = ['wins', 'losses', 'overtimeLosses', 'winPercent', 'points', 'pointDifferential', 'goalsFor', 'goalsAgainst'];
 
 function extractAndOrderStats(statsArray) {
   const stats = [];
@@ -11,7 +11,7 @@ function extractAndOrderStats(statsArray) {
       let displayValue = stat.value;
       
       // Format decimal values to 3 decimal places
-      if (statName === 'winPercent' || statName === 'differential') {
+      if (statName === 'winPercent' || statName === 'pointDifferential') {
         displayValue = typeof displayValue === 'number' ? displayValue.toFixed(3) : displayValue;
       }
       
@@ -25,15 +25,50 @@ function extractAndOrderStats(statsArray) {
   return stats;
 }
 
-export default function NBATeamPage() {
+export default function NHLTeamPage() {
   const { teamId } = useParams();
   const navigate = useNavigate();
   
   const [teamData, setTeamData] = useState(null);
   const [roster, setRoster] = useState([]);
-  const [teamStats, setTeamStats] = useState([]);
   const [standingStats, setStandingStats] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // NHL team to division mapping
+  const teamDivisionMap = {
+    '5': 'Atlantic',   // Detroit Red Wings
+    '20': 'Atlantic',  // Tampa Bay Lightning
+    '21': 'Atlantic',  // Toronto Maple Leafs
+    '26': 'Atlantic',  // Florida Panthers
+    '10': 'Atlantic',  // Montreal Canadiens
+    '1': 'Atlantic',   // Boston Bruins
+    '2': 'Atlantic',   // Buffalo Sabres
+    '14': 'Atlantic',  // Ottawa Senators
+    '16': 'Metropolitan', // Pittsburgh Penguins
+    '29': 'Metropolitan', // Columbus Blue Jackets
+    '23': 'Metropolitan', // Washington Capitals
+    '11': 'Metropolitan', // New Jersey Devils
+    '12': 'Metropolitan', // New York Islanders
+    '13': 'Metropolitan', // New York Rangers
+    '7': 'Metropolitan',  // Carolina Hurricanes
+    '15': 'Metropolitan', // Philadelphia Flyers
+    '4': 'Central',   // Chicago Blackhawks
+    '17': 'Central',  // Colorado Avalanche
+    '9': 'Central',   // Dallas Stars
+    '19': 'Central',  // St. Louis Blues
+    '129764': 'Central', // Utah Mammoth
+    '30': 'Central',  // Minnesota Wild
+    '27': 'Central',  // Nashville Predators
+    '28': 'Central',  // Winnipeg Jets
+    '18': 'Pacific',  // San Jose Sharks
+    '124292': 'Pacific', // Seattle Kraken
+    '6': 'Pacific',   // Edmonton Oilers
+    '8': 'Pacific',   // Los Angeles Kings
+    '22': 'Pacific',  // Vancouver Canucks
+    '37': 'Pacific',  // Vegas Golden Knights
+    '25': 'Pacific',  // Anaheim Ducks
+    '3': 'Pacific',   // Calgary Flames
+  };
 
   useEffect(() => {
     if (teamId) {
@@ -47,14 +82,13 @@ export default function NBATeamPage() {
     try {
       // Fetch team details
       const teamResponse = await fetch(
-        `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${id}`,
+        `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/${id}`,
         { headers: { 'Accept': 'application/json' } }
       );
       
       if (teamResponse.ok) {
         const response = await teamResponse.json();
-        const data = response.team || response; // Extract team object if nested
-        console.log('✓ NBA Team data loaded:', data.displayName || data.name, data);
+        const data = response.team || response;
         
         // Extract record from items array if present
         let record = '';
@@ -65,30 +99,22 @@ export default function NBATeamPage() {
           record = data.record;
         }
         
+        const division = teamDivisionMap[id] || 'N/A';
+        const conference = ['Atlantic', 'Metropolitan'].includes(division) ? 'Eastern Conference' : 'Western Conference';
+        
         setTeamData({
           ...data,
           displayName: data.displayName || data.name,
           record: record,
-          logo: data.logos?.[0]?.href || data.logo
+          logo: data.logos?.[0]?.href || data.logo,
+          division: division,
+          conference: conference
         });
-        
-        // Process team stats if available
-        if (data.statistics && Array.isArray(data.statistics)) {
-          const stats = [];
-          data.statistics.forEach(stat => {
-            stats.push({
-              displayName: stat.displayName || stat.name,
-              displayValue: stat.displayValue || stat.value,
-              name: stat.name
-            });
-          });
-          setTeamStats(stats);
-        }
       }
       
-      // Fetch standings to get allStats (wins, losses, etc.)
+      // Fetch standings to get standing stats (wins, losses, etc.)
       const standingsResponse = await fetch(
-        `https://site.api.espn.com/apis/v2/sports/basketball/nba/standings`,
+        `https://site.web.api.espn.com/apis/v2/sports/hockey/nhl/standings?season=${new Date().getFullYear()}`,
         { headers: { 'Accept': 'application/json' } }
       );
       
@@ -100,13 +126,9 @@ export default function NBATeamPage() {
         conferencesData.forEach(conf => {
           conf.standings.entries.forEach(entry => {
             if (entry.team.id === id) {
-              console.log('✓ Found NBA team in standings:', entry.team.displayName);
-              
               // Extract standing stats
               if (entry.stats && Array.isArray(entry.stats)) {
-                 console.log('All available stats:', entry.stats.map(s => s.name));
                 const stats = extractAndOrderStats(entry.stats);
-                console.log('✓ Standing stats extracted from standings:', stats);
                 setStandingStats(stats);
               }
             }
@@ -114,42 +136,69 @@ export default function NBATeamPage() {
         });
       }
       
-      // Fetch roster from Site API
+      // Fetch roster
       const rosterResponse = await fetch(
-        `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${id}/roster`,
+        `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/${id}/roster`,
         { headers: { 'Accept': 'application/json' } }
       );
       
       if (rosterResponse.ok) {
         const rosterData = await rosterResponse.json();
-        console.log('✓ NBA Roster data loaded:', rosterData);
         
-        // Athletes is directly an array
-        const players = rosterData.athletes || [];
+        // Handle grouped roster structure (by position)
+        let players = [];
         
-        console.log('✓ NBA Roster loaded:', players.length, 'players');
+        // The API returns rosterData.athletes as an array of position groups
+        if (rosterData.athletes && Array.isArray(rosterData.athletes)) {
+          rosterData.athletes.forEach((positionGroup) => {
+            if (positionGroup.items && Array.isArray(positionGroup.items)) {
+              players.push(...positionGroup.items);
+            }
+          });
+        }
+        
         setRoster(players);
       }
     } catch (err) {
-      console.error('Error fetching NBA team data:', err);
+      console.error('Error fetching NHL team data:', err);
     } finally {
+      // Log team info and stats (excluding roster)
+      console.log('=== NHL Team Page Data ===');
+      if (teamData) {
+        console.log('Team Info:', {
+          name: teamData.displayName,
+          abbreviation: teamData.abbreviation,
+          location: teamData.location,
+          division: teamData.division,
+          conference: teamData.conference,
+          record: teamData.record,
+          logo: teamData.logo,
+          venue: teamData.venue?.displayName,
+          founded: teamData.founded,
+          officialLogoUrl: teamData.logos?.[0]?.href,
+          colors: teamData.color
+        });
+      }
+      if (standingStats.length > 0) {
+        console.log('Standing Stats:', standingStats);
+      }
       setLoading(false);
     }
   };
 
   const handlePlayerClick = (athlete) => {
+    const routePath = `/nhl/player/${athlete.id}`;
     const playerData = {
       id: athlete.id,
       displayName: athlete.displayName,
       jersey: athlete.jersey,
       position: athlete.position,
       headshot: athlete.headshot,
-      college: athlete.college,
       team: teamData,
       ...athlete
     };
     
-    navigate(`/nba/player/${athlete.id}`, { state: { playerData } });
+    navigate(routePath, { state: { playerData } });
   };
 
   if (!teamData && !loading) {
@@ -159,7 +208,7 @@ export default function NBATeamPage() {
           <p className="text-gray-600 mb-4">No team data available. Please navigate from a game.</p>
           <button
             onClick={() => navigate(-1)}
-            className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+            className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800"
           >
             Go Back
           </button>
@@ -171,11 +220,15 @@ export default function NBATeamPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Header */}
-      <div className="bg-orange-500 text-white py-12 px-4">
-        <div className="max-w-6xl mx-auto">
+      <div className="py-8 px-4">
+        <div
+          className="max-w-6xl mx-auto text-white rounded-xl overflow-hidden"
+          style={{ backgroundImage: 'url(/hBg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        >
+        <div className="bg-gray-900/60 px-8 py-10">
           <button
             onClick={() => navigate(-1)}
-            className="mb-4 text-white hover:opacity-80 transition"
+            className="mb-4 text-white bg-gray-700 hover:opacity-80 transition"
           >
             ← Back
           </button>
@@ -200,17 +253,16 @@ export default function NBATeamPage() {
                 {teamData?.record && (
                   <p className="font-semibold">{teamData.record}</p>
                 )}
+                {teamData?.division && (
+                  <p>{teamData.division} • {teamData.conference}</p>
+                )}
                 {teamData?.location && (
                   <p>{teamData.location}</p>
-                )}
-                {typeof teamData?.conference === 'string' ? (
-                  <p>{teamData.conference}</p>
-                ) : (
-                  teamData?.conference?.name && <p>{teamData.conference.name}</p>
                 )}
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -219,7 +271,7 @@ export default function NBATeamPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mb-4 mx-auto"></div>
               <p className="text-gray-600">Loading team information...</p>
             </div>
           </div>
@@ -238,29 +290,7 @@ export default function NBATeamPage() {
                       <p className="text-xs text-gray-600 font-semibold uppercase mb-2">
                         {stat.displayName}
                       </p>
-                      <p className="text-xl md:text-2xl font-bold text-orange-500 font-oswald">
-                        {stat.displayValue}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Season Stats */}
-            {teamStats.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold font-oswald mb-6 text-gray-800">Season Stats</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {teamStats.map((stat, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white rounded-lg p-4 border-2 border-gray-200 shadow-sm hover:shadow-md transition"
-                    >
-                      <p className="text-xs text-gray-600 font-semibold uppercase mb-2">
-                        {stat.displayName}
-                      </p>
-                      <p className="text-xl md:text-2xl font-bold text-orange-500 font-oswald">
+                      <p className="text-xl md:text-2xl font-bold text-gray-700 font-oswald">
                         {stat.displayValue}
                       </p>
                     </div>
@@ -287,7 +317,7 @@ export default function NBATeamPage() {
                     <div
                       key={player.id || idx}
                       onClick={() => handlePlayerClick(player)}
-                      className="flex flex-col items-center p-4 bg-white rounded-lg border-2 border-gray-200 hover:shadow-lg hover:border-orange-400 transition cursor-pointer"
+                      className="flex flex-col items-center p-4 bg-white rounded-lg border-2 border-gray-200 hover:shadow-lg hover:border-gray-700 transition cursor-pointer"
                     >
                       {/* Player Headshot - Circular */}
                       {player.headshot?.href ? (
@@ -310,11 +340,6 @@ export default function NBATeamPage() {
                           <p className="font-semibold">
                             #{player.jersey} • {typeof player.position === 'string' ? player.position : player.position?.abbreviation}
                           </p>
-                          {typeof player.college === 'string' ? (
-                            <p className="truncate">{player.college}</p>
-                          ) : (
-                            player.college?.name && <p className="truncate">{player.college.name}</p>
-                          )}
                         </div>
                       </div>
                     </div>

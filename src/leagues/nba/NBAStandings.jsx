@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import NBAGamesHeader from '../NBAGamesHeader';
+import NBAGamesHeader from './NBAGamesHeader';
 
 export default function NBAStandings() {
   const navigate = useNavigate();

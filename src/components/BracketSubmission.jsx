@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from './firebase/AuthContext';
-import { API_ENDPOINTS, makeAuthenticatedRequest } from './config/api';
+import { useAuth } from '../firebase/AuthContext';
+import { API_ENDPOINTS, makeAuthenticatedRequest } from '../config/api';
 
 const BracketSubmission = ({ bracketData, onClose, onSuccess }) => {
   const [submitting, setSubmitting] = useState(false);

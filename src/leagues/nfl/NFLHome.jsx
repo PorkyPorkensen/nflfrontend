@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import GameDetailsModal from "../components/GameDetailsModal";
-import { FEATURES } from "../config/features";
+import GameDetailsModal from "../../components/GameDetailsModal";
+import { FEATURES } from "../../config/features";
 
 
 export default function NFLHome() {

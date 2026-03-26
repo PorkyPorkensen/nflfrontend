@@ -21,6 +21,13 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
           border: 'orange',
           text: 'orange'
         };
+      case 'nhl':
+        return {
+          primary: 'gray',
+          bg: 'gray',
+          border: 'gray',
+          text: 'gray'
+        };
       case 'nfl':
       default:
         return {
@@ -45,9 +52,11 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
     setError(null);
     
     try {
-      // Support NFL and NBA for now
+      // Support NFL, NBA, and NHL
       const sportPath = sport.toLowerCase() === 'nba' 
-        ? 'basketball/nba' 
+        ? 'basketball/nba'
+        : sport.toLowerCase() === 'nhl'
+        ? 'hockey/nhl'
         : 'football/nfl';
       
       const response = await fetch(
@@ -121,8 +130,10 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
           }} onTeamClick={(team) => {
             if (sport.toLowerCase() === 'nfl') {
               navigate(`/nfl/team/${team.id}`, { state: { teamData: team } });
-            } else {
+            } else if (sport.toLowerCase() === 'nba') {
               navigate(`/nba/team/${team.id}`, { state: { teamData: team } });
+            } else {
+              navigate(`/nhl/team/${team.id}`, { state: { teamData: team } });
             }
           }} />
         )}

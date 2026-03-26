@@ -17,6 +17,14 @@ export default function Home() {
       color: "from-orange-500 to-orange-600",
       path: "/nba",
       status: "active"
+    },
+    {
+      name: "NHL",
+      icon: "🏒",
+      description: "National Hockey League",
+      color: "from-gray-700 to-gray-800",
+      path: "/nhl",
+      status: "active"
     }
   ];
 
@@ -42,7 +50,7 @@ export default function Home() {
       </div>
 
       {/* League Selection Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
         {leagues.map((league) => (
           <Link
             key={league.name}
