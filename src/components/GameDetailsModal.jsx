@@ -10,10 +10,14 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Helper to safely get sport in lowercase (handles null)
+  const getSportLower = () => (sport || 'nfl').toLowerCase();
 
   // Get sport-specific colors
   const getSportColors = () => {
-    switch(sport.toLowerCase()) {
+    switch(getSportLower()) {
       case 'nba':
         return {
           primary: 'orange',
@@ -43,19 +47,32 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
 
   useEffect(() => {
     if (isOpen && gameId) {
+      setIsInitialLoad(true);
       fetchGameDetails();
     }
   }, [isOpen, gameId, sport]);
 
+  // Auto-refresh game details every 15 seconds while modal is open
+  useEffect(() => {
+    if (!isOpen || !gameId) return;
+
+    const interval = setInterval(fetchGameDetails, 15000);
+    return () => clearInterval(interval);
+  }, [isOpen, gameId, sport]);
+
   const fetchGameDetails = async () => {
-    setLoading(true);
+    // Only show loading on initial load, not on auto-refresh
+    if (isInitialLoad) {
+      setLoading(true);
+    }
     setError(null);
     
     try {
       // Support NFL, NBA, and NHL
-      const sportPath = sport.toLowerCase() === 'nba' 
+      const sportLower = getSportLower();
+      const sportPath = sportLower === 'nba' 
         ? 'basketball/nba'
-        : sport.toLowerCase() === 'nhl'
+        : sportLower === 'nhl'
         ? 'hockey/nhl'
         : 'football/nfl';
       
@@ -69,11 +86,17 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
       
       const data = await response.json();
       setGameDetails(data);
+      setError(null); // Clear error on successful fetch
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     } catch (err) {
       setError(err.message);
       // console.error('Error fetching game details:', err);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   };
 
@@ -128,9 +151,9 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
             setSelectedPlayer({ ...player, gameStats });
             setShowPlayerModal(true);
           }} onTeamClick={(team) => {
-            if (sport.toLowerCase() === 'nfl') {
+            if (getSportLower() === 'nfl') {
               navigate(`/nfl/team/${team.id}`, { state: { teamData: team } });
-            } else if (sport.toLowerCase() === 'nba') {
+            } else if (getSportLower() === 'nba') {
               navigate(`/nba/team/${team.id}`, { state: { teamData: team } });
             } else {
               navigate(`/nhl/team/${team.id}`, { state: { teamData: team } });
@@ -169,6 +192,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
   // Log the full structure to understand the data better
   // console.log('Full gameDetails structure:', gameDetails);
   
+  const getSportLower = () => (sport || 'nfl').toLowerCase();
   const { header, boxscore, gameInfo, drives, leaders, winprobability, pickcenter, broadcasts, news } = gameDetails;
   
   // Enhanced team click handler for NFL that just passes the team ID
@@ -289,7 +313,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
 
   // Filter stats for NBA (up to and including turnovers)
   const getFilteredStats = (stats) => {
-    if (sport.toLowerCase() !== 'nba' || !Array.isArray(stats)) return stats;
+    if (getSportLower() !== 'nba' || !Array.isArray(stats)) return stats;
     
     const turnoversIndex = stats.findIndex(stat => 
       stat?.name?.toLowerCase().includes('turnover')
@@ -406,7 +430,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
       <div className="mb-12 mt-2 pr-2 md:pr-8">
         <div className="flex flex-col md:flex-row items-center justify-center mb-4 space-y-4 md:space-y-0">
           {/* Away Team */}
-          <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nfl' ? handleNFLTeamClick(awayTeam?.team) : onTeamClick(awayTeam?.team || formatTeamForModal(awayTeam?.team))}>
+          <div className="flex items-center mr-0 md:mr-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => getSportLower() === 'nfl' ? handleNFLTeamClick(awayTeam?.team) : onTeamClick(awayTeam?.team || formatTeamForModal(awayTeam?.team))}>
             {(awayTeam?.team?.logo || awayTeam?.team?.logos?.[0]?.href) && (
               <img 
                 src={awayTeam.team.logo || awayTeam.team.logos[0].href} 
@@ -431,7 +455,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
           <div className="mx-2 md:mx-4 text-gray-400 font-bold text-sm md:text-base">VS</div>
 
           {/* Home Team */}
-          <div className="flex items-center ml-0 md:ml-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => sport.toLowerCase() === 'nfl' ? handleNFLTeamClick(homeTeam?.team) : onTeamClick(homeTeam?.team || formatTeamForModal(homeTeam?.team))}>
+          <div className="flex items-center ml-0 md:ml-8 w-full md:w-auto cursor-pointer hover:opacity-75 transition-opacity" onClick={() => getSportLower() === 'nfl' ? handleNFLTeamClick(homeTeam?.team) : onTeamClick(homeTeam?.team || formatTeamForModal(homeTeam?.team))}>
             {(homeTeam?.team?.logo || homeTeam?.team?.logos?.[0]?.href) && (
               <img 
                 src={homeTeam.team.logo || homeTeam.team.logos[0].href} 
@@ -489,7 +513,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                     <th className="text-left py-2 pr-6">Team</th>
                     {Array.isArray(boxscore.teams[0]?.statistics) && reorderStats(boxscore.teams[0].statistics).map((stat, idx) => (
                       <th key={idx} className="text-center px-3 py-2 whitespace-nowrap">
-                        {sport.toLowerCase() === 'nba' 
+                        {getSportLower() === 'nba' 
                           ? getStatLabel(stat?.name || stat?.abbreviation || `Stat ${idx + 1}`)
                           : (stat?.abbreviation || stat?.name || `Stat ${idx + 1}`)
                         }
@@ -654,7 +678,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
         )}
 
         {/* Betting Odds / Spreads */}
-        {(bettingLines.length > 0 || sport.toLowerCase() === 'nfl') && (
+        {(bettingLines.length > 0 || getSportLower() === 'nfl') && (
           <div className="flex justify-center">
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-300 w-full" style={{maxWidth: '400px'}}>
             <h3 className="text-lg font-semibold mb-3">Pre-Game Betting Lines</h3>

@@ -11,12 +11,20 @@ export default function NHLHome() {
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [showGameDetails, setShowGameDetails] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Fetch games for selected date
   const fetchGames = async () => {
-    setLoading(true);
+    // Only show loading on initial load, not on auto-refresh
+    if (isInitialLoad) {
+      setLoading(true);
+    }
     try {
-      const dateStr = selectedDate.toISOString().slice(0, 10).replace(/-/g, '');
+      // Format date as YYYYMMDD using local date values (not UTC)
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}${month}${day}`;
       const endpoint = `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=${dateStr}`;
       
       const res = await fetch(endpoint);
@@ -48,11 +56,16 @@ export default function NHLHome() {
           };
         }) || [];
         setLiveGames(games);
+        if (isInitialLoad) {
+          setIsInitialLoad(false);
+        }
       }
     } catch (err) {
       console.error('Error fetching NHL games:', err);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   };
 
@@ -61,7 +74,7 @@ export default function NHLHome() {
     fetchGames();
   }, [selectedDate]);
 
-  // Auto-refresh for live games every 30 seconds
+  // Auto-refresh for live games every 30 seconds, even with modal open
   useEffect(() => {
     const hasLiveGames = liveGames.some(game => game.status === 'in');
     
@@ -69,7 +82,7 @@ export default function NHLHome() {
 
     const interval = setInterval(fetchGames, 30000);
     return () => clearInterval(interval);
-  }, [liveGames]);
+  }, [liveGames, selectedDate]);
 
   // Handle game click to show details
   const handleGameClick = (gameId) => {
@@ -204,7 +217,7 @@ export default function NHLHome() {
                       ? 'bg-blue-100 text-blue-800'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {game.status === 'in' && game.clock ? `${game.period}${['st', 'nd', 'rd'][game.period - 1] || 'th'} ${game.clock}` : game.statusText}
+                    {game.status === 'in' && game.clock ? (game.period > 3 ? `OT ${game.clock}` : `${game.period}${['st', 'nd', 'rd'][game.period - 1] || 'th'} ${game.clock}`) : game.statusText}
                   </span>
                 </div>
 

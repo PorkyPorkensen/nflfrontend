@@ -54,7 +54,6 @@ export default function NBATeamPage() {
       if (teamResponse.ok) {
         const response = await teamResponse.json();
         const data = response.team || response; // Extract team object if nested
-        console.log('✓ NBA Team data loaded:', data.displayName || data.name, data);
         
         // Extract record from items array if present
         let record = '';
@@ -100,13 +99,10 @@ export default function NBATeamPage() {
         conferencesData.forEach(conf => {
           conf.standings.entries.forEach(entry => {
             if (entry.team.id === id) {
-              console.log('✓ Found NBA team in standings:', entry.team.displayName);
               
               // Extract standing stats
               if (entry.stats && Array.isArray(entry.stats)) {
-                 console.log('All available stats:', entry.stats.map(s => s.name));
                 const stats = extractAndOrderStats(entry.stats);
-                console.log('✓ Standing stats extracted from standings:', stats);
                 setStandingStats(stats);
               }
             }
@@ -122,12 +118,10 @@ export default function NBATeamPage() {
       
       if (rosterResponse.ok) {
         const rosterData = await rosterResponse.json();
-        console.log('✓ NBA Roster data loaded:', rosterData);
         
         // Athletes is directly an array
         const players = rosterData.athletes || [];
         
-        console.log('✓ NBA Roster loaded:', players.length, 'players');
         setRoster(players);
       }
     } catch (err) {

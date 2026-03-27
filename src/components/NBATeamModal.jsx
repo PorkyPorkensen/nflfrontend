@@ -30,7 +30,6 @@ export default function NBATeamModal({ team, isOpen, onClose, season }) {
       
       if (teamResponse.ok) {
         const teamData = await teamResponse.json();
-        console.log('NBA Team data:', teamData);
         
         // Extract stats from the team data
         if (teamData?.team?.stats) {
@@ -64,7 +63,6 @@ export default function NBATeamModal({ team, isOpen, onClose, season }) {
       
       if (rosterResponse.ok) {
         const rosterData = await rosterResponse.json();
-        console.log('NBA Roster data:', rosterData);
         
         if (rosterData?.athletes) {
           setRoster(rosterData.athletes);

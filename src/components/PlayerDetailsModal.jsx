@@ -41,11 +41,8 @@ export default function PlayerDetailsModal({
       }
       
       const rosterData = await rosterResponse.json();
-      console.log('Roster response:', rosterData);
-      console.log('Looking for player ID:', player.id);
       
       if (rosterData?.athletes) {
-        console.log('Roster athletes:', rosterData.athletes);
         
         // Some sports/seasons group players by category (NHL, NFL off-season, etc.), so flatten if needed
         let athletesArray = rosterData.athletes;
@@ -81,18 +78,8 @@ export default function PlayerDetailsModal({
           );
         }
         
-        // Log what we found
-        if (!playerData) {
-          console.log('Exact match not found. Available athlete IDs:', athletesArray.map(a => a.id));
-          console.log('Available Names:', athletesArray.map(a => a.displayName || a.name));
-          console.log('Available Jerseys:', athletesArray.map(a => a.jersey));
-          // Don't set error - just means we couldn't find them in the roster, which is fine
-        }
         
         if (playerData) {
-          console.log('Found player data:', playerData);
-          console.log('Player data keys:', Object.keys(playerData));
-          console.log('Has stats?:', playerData.stats);
           setSeasonStats(playerData);
         }
       } else {
@@ -109,8 +96,6 @@ export default function PlayerDetailsModal({
 
   if (!isOpen || !player) return null;
 
-  console.log('Player position object:', player.position);
-  console.log('Player athlete position:', player.athlete?.position);
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {

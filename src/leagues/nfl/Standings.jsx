@@ -19,9 +19,6 @@ export default function Standings() {
       .then(data => {
         const conferencesData = data.children;
         
-        // Debug: log the structure to understand division data
-        console.log('Conferences data:', conferencesData[0]);
-        
         // Extract all teams with their full data
         const teams = conferencesData.flatMap(conf =>
           conf.standings.entries.map(entry => {
@@ -120,7 +117,7 @@ export default function Standings() {
       <LiveGamesHeader />
       {/* Page Header */}
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4 font-oswald">NFL Standings - {season} Season</h1>
+        <h1 className="text-4xl font-bold text-gray-800 mb-4 font-oswald">NFL Standings</h1>
         
         {/* Global Controls */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 mb-6">
