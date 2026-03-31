@@ -227,11 +227,11 @@ export default function LiveGamesHeader() {
           )}
         </div>
       </div>
-      <div className={`flex flex-wrap gap-4 ${screenSize === 'mobile' || (showAllGames ? liveGames : liveGames.slice(0, getDefaultGameCount())).length === 1 ? 'justify-center' : ''}`}>
+      <div className={`flex flex-wrap gap-4 ${screenSize === 'mobile' || screenSize === 'md' || (showAllGames ? liveGames : liveGames.slice(0, getDefaultGameCount())).length === 1 ? 'justify-center' : ''}`}>
         {(showAllGames ? liveGames : liveGames.slice(0, getDefaultGameCount())).map(game => (
           <div 
             key={game.id} 
-            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 w-64 flex-shrink-0 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200"
+            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 w-56 flex-shrink-0 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200"
             onClick={() => handleGameClick(game.id)}
           >
             {/* Game Status */}

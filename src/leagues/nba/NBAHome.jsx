@@ -148,26 +148,28 @@ export default function NBAHome() {
 
       {/* Scores Section */}
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl md:text-3xl font-bold text-gray-800 font-oswald">Scores</h3>
+        <div className="flex items-center justify-between mb-6 flex-col md:flex-row gap-4">
+          <h3 className="text-xl md:text-3xl font-bold text-gray-800 font-oswald">Schedule</h3>
           
           {/* Date Navigation */}
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={handlePreviousDay}
-              className="px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
-            >
-              ←
-            </button>
-            <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold min-w-32 text-center font-roboto-mono">
-              {formattedDate}
-            </span>
-            <button 
-              onClick={handleNextDay}
-              className="px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
-            >
-              →
-            </button>
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handlePreviousDay}
+                className="px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+              >
+                ←
+              </button>
+              <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold min-w-32 text-center font-roboto-mono">
+                {formattedDate}
+              </span>
+              <button 
+                onClick={handleNextDay}
+                className="px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+              >
+                →
+              </button>
+            </div>
           </div>
         </div>
 

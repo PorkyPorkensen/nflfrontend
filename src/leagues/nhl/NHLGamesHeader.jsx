@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import GameDetailsModal from "../../components/GameDetailsModal";
 
-export default function NBAGamesHeader() {
+export default function NHLGamesHeader() {
   const [liveGames, setLiveGames] = useState([]);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showAllGames, setShowAllGames] = useState(false);
@@ -28,7 +28,7 @@ export default function NBAGamesHeader() {
     return () => window.removeEventListener('resize', updateScreenSize);
   }, []);
 
-  // Fetch NBA live games
+  // Fetch NHL live games
   const tryScoreboardAPI = async () => {
     // Format date as YYYYMMDD for ESPN API
     const year = selectedDate.getFullYear();
@@ -37,8 +37,8 @@ export default function NBAGamesHeader() {
     const formattedDate = `${year}${month}${day}`;
 
     const endpoints = [
-      `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}`,
-      `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}&seasontype=2`
+      `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=${formattedDate}`,
+      `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=${formattedDate}&seasontype=2`
     ];
 
     for (const endpoint of endpoints) {
@@ -85,20 +85,20 @@ export default function NBAGamesHeader() {
       {
         id: 'mock1',
         status: 'in',
-        statusText: '2nd Qtr',
+        statusText: '2nd Period',
         period: 2,
         clock: '8:42',
         homeTeam: {
-          name: 'Los Angeles Lakers',
-          abbreviation: 'LAL',
-          logo: 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
-          score: '62'
+          name: 'New York Rangers',
+          abbreviation: 'NYR',
+          logo: 'https://a.espncdn.com/i/teamlogos/nhl/500/nyr.png',
+          score: '2'
         },
         awayTeam: {
-          name: 'Boston Celtics',
+          name: 'Boston Bruins',
           abbreviation: 'BOS',
-          logo: 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
-          score: '58'
+          logo: 'https://a.espncdn.com/i/teamlogos/nhl/500/bos.png',
+          score: '1'
         }
       }
     ]);
@@ -184,7 +184,7 @@ export default function NBAGamesHeader() {
           <div className="flex items-center gap-2 justify-center md:justify-start">
             <button 
               onClick={handlePreviousDay}
-              className="px-2 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors font-semibold"
+              className="px-2 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors font-semibold"
             >
               ←
             </button>
@@ -193,7 +193,7 @@ export default function NBAGamesHeader() {
             </span>
             <button 
               onClick={handleNextDay}
-              className="px-2 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors font-semibold"
+              className="px-2 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors font-semibold"
             >
               →
             </button>
@@ -202,13 +202,13 @@ export default function NBAGamesHeader() {
             type="date"
             value={formatDateForInput(selectedDate)}
             onChange={handleDateChange}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-roboto-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-roboto-mono focus:outline-none focus:ring-2 focus:ring-gray-500"
           />
           
           {liveGames.length > getDefaultGameCount() && (
             <button
               onClick={() => setShowAllGames(!showAllGames)}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 max-w-xs md:max-w-none w-full md:w-auto"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 max-w-xs md:max-w-none w-full md:w-auto"
             >
               {showAllGames ? 'Show Less' : `Show All (${liveGames.length})`}
             </button>
@@ -220,7 +220,7 @@ export default function NBAGamesHeader() {
         {(showAllGames ? liveGames : liveGames.slice(0, getDefaultGameCount())).map(game => (
           <div 
             key={game.id} 
-            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 w-56 flex-shrink-0 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all duration-200"
+            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 w-56 flex-shrink-0 cursor-pointer hover:shadow-md hover:border-gray-400 transition-all duration-200"
             onClick={() => handleGameClick(game.id)}
           >
             {/* Game Status */}
@@ -229,10 +229,10 @@ export default function NBAGamesHeader() {
                 game.status === 'in' 
                   ? 'bg-red-100 text-red-800' 
                   : game.status === 'pre'
-                  ? 'bg-orange-100 text-orange-800'
+                  ? 'bg-gray-100 text-gray-800'
                   : 'bg-gray-100 text-gray-800'
               }`}>
-                {game.status === 'in' && game.clock ? `Q${game.period} ${game.clock}` : game.statusText}
+                {game.status === 'in' && game.clock ? `P${game.period} ${game.clock}` : game.statusText}
               </span>
             </div>
 
@@ -274,7 +274,7 @@ export default function NBAGamesHeader() {
       <GameDetailsModal
         gameId={selectedGameId}
         isOpen={showGameDetails}
-        sport="nba"
+        sport="nhl"
         onClose={() => {
           setShowGameDetails(false);
           setSelectedGameId(null);

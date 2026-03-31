@@ -32,6 +32,13 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
           border: 'gray',
           text: 'gray'
         };
+      case 'mlb':
+        return {
+          primary: 'amber',
+          bg: 'amber',
+          border: 'amber',
+          text: 'amber'
+        };
       case 'nfl':
       default:
         return {
@@ -52,13 +59,19 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
     }
   }, [isOpen, gameId, sport]);
 
-  // Auto-refresh game details every 15 seconds while modal is open
+  // Auto-refresh game details every 15 seconds while modal is open, but only for live games
   useEffect(() => {
-    if (!isOpen || !gameId) return;
+    if (!isOpen || !gameId || !gameDetails) return;
+
+    // Only set up auto-refresh if game is in progress
+    const gameStatus = gameDetails?.header?.competitions?.[0]?.status?.type?.state;
+    if (gameStatus !== 'in') {
+      return; // Don't auto-refresh for finished or scheduled games
+    }
 
     const interval = setInterval(fetchGameDetails, 15000);
     return () => clearInterval(interval);
-  }, [isOpen, gameId, sport]);
+  }, [isOpen, gameId, sport, gameDetails]);
 
   const fetchGameDetails = async () => {
     // Only show loading on initial load, not on auto-refresh
@@ -68,12 +81,14 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
     setError(null);
     
     try {
-      // Support NFL, NBA, and NHL
+      // Support NFL, NBA, NHL, and MLB
       const sportLower = getSportLower();
       const sportPath = sportLower === 'nba' 
         ? 'basketball/nba'
         : sportLower === 'nhl'
         ? 'hockey/nhl'
+        : sportLower === 'mlb'
+        ? 'baseball/mlb'
         : 'football/nfl';
       
       const response = await fetch(
@@ -119,7 +134,7 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
           <div className="p-8 text-center">
             <div 
               className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
-              style={{ borderBottomColor: colors.bg === 'orange' ? '#f97316' : '#3b82f6' }}
+              style={{ borderBottomColor: colors.bg === 'orange' ? '#f97316' : colors.bg === 'amber' ? '#b45309' : '#3b82f6' }}
             ></div>
             <p className="mt-4 text-gray-600 font-roboto-condensed">Loading game details...</p>
           </div>
@@ -131,7 +146,7 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
             <p className="text-gray-600 font-roboto-condensed">{error}</p>
             <button
               onClick={fetchGameDetails}
-              style={{ backgroundColor: colors.bg === 'orange' ? '#f97316' : '#3b82f6' }}
+              style={{ backgroundColor: colors.bg === 'orange' ? '#f97316' : colors.bg === 'amber' ? '#b45309' : '#3b82f6' }}
               className="mt-4 px-4 py-2 text-white rounded hover:opacity-80 transition-opacity"
             >
               Try Again
@@ -155,6 +170,8 @@ export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl
               navigate(`/nfl/team/${team.id}`, { state: { teamData: team } });
             } else if (getSportLower() === 'nba') {
               navigate(`/nba/team/${team.id}`, { state: { teamData: team } });
+            } else if (getSportLower() === 'mlb') {
+              navigate(`/mlb/team/${team.id}`, { state: { teamData: team } });
             } else {
               navigate(`/nhl/team/${team.id}`, { state: { teamData: team } });
             }
@@ -231,8 +248,35 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
     : [];
   const bettingLines = pickcenterLines.length > 0 ? pickcenterLines : competitionOddsLines;
 
-  // Helper function to get custom stat label for NBA
+  // Helper function to get custom stat label for sport-specific stats
   const getStatLabel = (statName) => {
+    const sportLower = getSportLower();
+    
+    // MLB stat labels
+    const mlbLabels = {
+      'hits': 'H',
+      'runs': 'R',
+      'homeRuns': 'HR',
+      'runsBattedIn': 'RBI',
+      'strikeOuts': 'K',
+      'walks': 'BB',
+      'hitByPitch': 'HBP',
+      'plateAppearances': 'PA',
+      'battingAverage': 'AVG',
+      'onBasePct': 'OBP',
+      'sluggingPct': 'SLG',
+      'earnedRun': 'ER',
+      'wins': 'W',
+      'losses': 'L',
+      'saves': 'SV',
+      'inningsPitched': 'IP',
+      'strikeouts': 'K',
+      'walks': 'BB',
+      'era': 'ERA',
+      'pitchCount': 'PC'
+    };
+    
+    // NBA stat labels
     const nbaLabels = {
       'fieldGoalsMade-fieldGoalsAttempted': 'FG',
       'threePointFieldGoalsMade-threePointFieldGoalsAttempted': '3PT',
@@ -257,7 +301,9 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
       'avgBlocks': 'BLK',
       'avgSteals': 'STL'
     };
-    return nbaLabels[statName] || statName;
+    
+    const labels = sportLower === 'mlb' ? mlbLabels : nbaLabels;
+    return labels[statName] || statName;
   };
 
   // Helper function to define stat display order and filter
@@ -323,6 +369,26 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
       return stats.slice(0, turnoversIndex + 1);
     }
     return stats;
+  };
+
+  // Helper function to get MLB team stats organized by category
+  const getMLBTeamStats = (team) => {
+    if (!team?.statistics) return [];
+    
+    // MLB stats are organized by group (batting, pitching, fielding)
+    const stats = team.statistics;
+    if (Array.isArray(stats) && stats.length > 0) {
+      // Check if it's grouped by category
+      if (stats[0]?.name && ['batting', 'pitching', 'fielding'].includes(stats[0].name.toLowerCase())) {
+        // It's organized by category, flatten with labels
+        return stats.map((group, idx) => ({
+          ...group,
+          abbreviation: group.name || `Stat ${idx + 1}`,
+          displayValue: group.displayValue || '-'
+        }));
+      }
+    }
+    return stats || [];
   };
 
   // Helper function to format team data for NBATeamModal
@@ -479,9 +545,32 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
 
         {/* Game Status */}
         <div className="text-center">
-          <p className="text-base md:text-lg font-medium font-roboto-condensed">{String(header?.competitions?.[0]?.status?.type?.detail || 'Game Status')}</p>
+          {header?.competitions?.[0]?.date ? (
+            <>
+              <p className="text-base md:text-lg font-medium font-roboto-condensed">
+                {new Date(header.competitions[0].date).toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric'
+                })}
+              </p>
+              <p className="text-sm md:text-base font-roboto-condensed text-gray-600 mt-1">
+                {new Date(header.competitions[0].date).toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  timeZoneName: 'short'
+                })}
+              </p>
+              <p className="text-xs md:text-sm font-roboto-condensed text-gray-500 mt-1">
+                {String(header?.competitions?.[0]?.status?.type?.detail || 'Game Status')}
+              </p>
+            </>
+          ) : (
+            <p className="text-base md:text-lg font-medium font-roboto-condensed">{String(header?.competitions?.[0]?.status?.type?.detail || 'Game Status')}</p>
+          )}
           {gameInfo?.venue && (
-            <p className="text-gray-600 font-roboto-condensed text-sm md:text-base">
+            <p className="text-gray-600 font-roboto-condensed text-sm md:text-base mt-2">
               {String(gameInfo.venue.fullName || 'Stadium')}
               {gameInfo.venue.address?.city ? ` • ${String(gameInfo.venue.address.city)}` : ''}
             </p>
@@ -492,7 +581,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
         <div className="text-center mt-4 mb-6">
           <button
             onClick={onClose}
-            style={{ backgroundColor: colors.bg === 'orange' ? '#ea580c' : '#2563eb' }}
+            style={{ backgroundColor: colors.bg === 'orange' ? '#ea580c' : colors.bg === 'amber' ? '#92400e' : '#2563eb' }}
             className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-opacity font-medium"
             aria-label="Close modal"
           >
@@ -502,52 +591,113 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
       </div>
 
       {/* Team Stats - Full width centered section */}
-      {boxscore?.teams && Array.isArray(boxscore.teams) && boxscore.teams.length > 0 && (
+      {(getSportLower() !== 'mlb' || (getSportLower() === 'mlb' && header?.competitions?.[0]?.status?.type?.state === 'pre')) && boxscore?.teams && Array.isArray(boxscore.teams) && boxscore.teams.length > 0 && (
         <div className="flex justify-center">
-          <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-300 w-full" style={{maxWidth: '900px'}}>
-            <h3 className="text-lg font-semibold mb-3 font-oswald">Team Stats</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 pr-6">Team</th>
-                    {Array.isArray(boxscore.teams[0]?.statistics) && reorderStats(boxscore.teams[0].statistics).map((stat, idx) => (
-                      <th key={idx} className="text-center px-3 py-2 whitespace-nowrap">
-                        {getSportLower() === 'nba' 
-                          ? getStatLabel(stat?.name || stat?.abbreviation || `Stat ${idx + 1}`)
-                          : (stat?.abbreviation || stat?.name || `Stat ${idx + 1}`)
-                        }
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {boxscore.teams.map((team, idx) => {
-                    const reorderedTeamStats = reorderStats(team?.statistics);
-                    return (
-                      <tr key={idx} className="border-b">
-                        <td className="py-2 pr-6">
-                          <div className="flex items-center gap-2">
-                            {team?.team?.logo && (
-                              <img 
-                                src={team.team.logo} 
-                                alt={team.team?.name || 'Team'} 
-                                className="w-6 h-6 flex-shrink-0"
-                                onError={(e) => { e.target.style.display = 'none'; }}
-                              />
-                            )}
-                            <span className="font-medium">{team?.team?.abbreviation || 'Team'}</span>
-                          </div>
-                        </td>
-                        {Array.isArray(reorderedTeamStats) && reorderedTeamStats.map((stat, statIdx) => (
-                          <td key={statIdx} className="text-center px-3 py-2">{stat?.displayValue || stat?.value || 'N/A'}</td>
+          <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-300 w-full md:mb-8" style={{maxWidth: '500px'}}>
+            {getSportLower() === 'mlb' && header?.competitions?.[0]?.status?.type?.state === 'pre' ? (
+              // MLB: Show game projection win percentage (only for scheduled games)
+              <>
+                <h3 className="text-lg font-semibold mb-3 text-center font-oswald">Game Projection</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {gameDetails?.predictor ? (
+                    <>
+                      {/* Away Team Projection */}
+                      <div className="bg-white rounded p-4 border border-gray-200 text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          {awayTeam?.team?.logo && (
+                            <img 
+                              src={awayTeam.team.logo} 
+                              alt={awayTeam.team?.name || 'Away'} 
+                              className="w-6 h-6"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="font-medium text-sm">{awayTeam?.team?.abbreviation || 'Away'}</span>
+                        </div>
+                        <div className="text-2xl font-bold" style={{color: colors.bg === 'amber' ? '#b45309' : '#3b82f6'}}>
+                          {gameDetails.predictor.awayTeam?.gameProjection 
+                            ? `${gameDetails.predictor.awayTeam.gameProjection}%`
+                            : 'N/A'
+                          }
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Win Probability</p>
+                      </div>
+
+                      {/* Home Team Projection */}
+                      <div className="bg-white rounded p-4 border border-gray-200 text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          {homeTeam?.team?.logo && (
+                            <img 
+                              src={homeTeam.team.logo} 
+                              alt={homeTeam.team?.name || 'Home'} 
+                              className="w-6 h-6"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="font-medium text-sm">{homeTeam?.team?.abbreviation || 'Home'}</span>
+                        </div>
+                        <div className="text-2xl font-bold" style={{color: colors.bg === 'amber' ? '#b45309' : '#3b82f6'}}>
+                          {gameDetails.predictor.homeTeam?.gameProjection 
+                            ? `${gameDetails.predictor.homeTeam.gameProjection}%`
+                            : 'N/A'
+                          }
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Win Probability</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="col-span-2 text-center text-gray-500">No projection data available</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              // NFL/NBA/NHL stats: flat array structure
+              <>
+                <h3 className="text-lg font-semibold mb-3 font-oswald">Team Stats</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 pr-6">Team</th>
+                        {Array.isArray(boxscore.teams[0]?.statistics) && reorderStats(boxscore.teams[0].statistics).map((stat, idx) => (
+                          <th key={idx} className="text-center px-3 py-2 whitespace-nowrap">
+                            {getSportLower() === 'nba' 
+                              ? getStatLabel(stat?.name || stat?.abbreviation || `Stat ${idx + 1}`)
+                              : (stat?.abbreviation || stat?.name || `Stat ${idx + 1}`)
+                            }
+                          </th>
                         ))}
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {boxscore.teams.map((team, idx) => {
+                        const reorderedTeamStats = reorderStats(team?.statistics);
+                        return (
+                          <tr key={idx} className="border-b">
+                            <td className="py-2 pr-6">
+                              <div className="flex items-center gap-2">
+                                {team?.team?.logo && (
+                                  <img 
+                                    src={team.team.logo} 
+                                    alt={team.team?.name || 'Team'} 
+                                    className="w-6 h-6 flex-shrink-0"
+                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                  />
+                                )}
+                                <span className="font-medium">{team?.team?.abbreviation || 'Team'}</span>
+                              </div>
+                            </td>
+                            {Array.isArray(reorderedTeamStats) && reorderedTeamStats.map((stat, statIdx) => (
+                              <td key={statIdx} className="text-center px-3 py-2">{stat?.displayValue || stat?.value || 'N/A'}</td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

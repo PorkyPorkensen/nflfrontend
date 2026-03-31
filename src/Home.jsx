@@ -7,6 +7,7 @@ export default function Home() {
   const [nflGames, setNflGames] = useState([]);
   const [nbaGames, setNbaGames] = useState([]);
   const [nhlGames, setNhlGames] = useState([]);
+  const [mlbGames, setMlbGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [selectedGameId, setSelectedGameId] = useState(null);
@@ -57,6 +58,15 @@ export default function Home() {
       color: "from-gray-700 to-gray-800",
       image: "/nhlLp.jpg",
       path: "/nhl",
+      status: "active"
+    },
+    {
+      name: "MLB",
+      icon: "⚾",
+      description: "Major League Baseball",
+      color: "from-amber-600 to-amber-700",
+      image: "/mlbBg.jpg",
+      path: "/mlb",
       status: "active"
     }
   ];
@@ -194,8 +204,48 @@ export default function Home() {
         }
       };
 
+      // Fetch MLB games
+      const fetchMLB = async () => {
+        try {
+          const res = await fetch(
+            `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${dateStr}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const games = data.events?.map(event => {
+              const competition = event.competitions[0];
+              const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
+              const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
+              return {
+                id: event.id,
+                status: event.status.type.state,
+                statusText: event.status.type.shortDetail,
+                period: event.status.period,
+                clock: event.status.displayClock,
+                homeTeam: {
+                  name: homeTeam.team.displayName,
+                  abbreviation: homeTeam.team.abbreviation,
+                  logo: homeTeam.team.logo,
+                  score: homeTeam.score
+                },
+                awayTeam: {
+                  name: awayTeam.team.displayName,
+                  abbreviation: awayTeam.team.abbreviation,
+                  logo: awayTeam.team.logo,
+                  score: awayTeam.score
+                }
+              };
+            }) || [];
+            setMlbGames(games);
+          }
+        } catch (err) {
+          console.error('Error fetching MLB games:', err);
+          setMlbGames([]);
+        }
+      };
+
       // Fetch all in parallel
-      await Promise.all([fetchNFL(), fetchNBA(), fetchNHL()]);
+      await Promise.all([fetchNFL(), fetchNBA(), fetchNHL(), fetchMLB()]);
       if (isInitialLoad) {
         setIsInitialLoad(false);
       }
@@ -219,13 +269,14 @@ export default function Home() {
     const hasLiveGames = 
       nflGames.some(g => g.status === 'in') ||
       nbaGames.some(g => g.status === 'in') ||
-      nhlGames.some(g => g.status === 'in');
+      nhlGames.some(g => g.status === 'in') ||
+      mlbGames.some(g => g.status === 'in');
 
     if (!hasLiveGames) return;
 
     const interval = setInterval(fetchAllGames, 30000);
     return () => clearInterval(interval);
-  }, [nflGames, nbaGames, nhlGames, selectedDate]);
+  }, [nflGames, nbaGames, nhlGames, mlbGames, selectedDate]);
 
   // Handle date navigation
   const handlePreviousDay = () => {
@@ -264,6 +315,8 @@ export default function Home() {
       if (game.status === 'in' && game.clock) {
         if (sport === 'nhl' && game.period > 3) {
           return `OT ${game.clock}`;
+        } else if (sport === 'mlb') {
+          return `${game.period ? `Inning ${game.period}` : 'Live'} ${game.clock}`;
         } else if (sport === 'nfl') {
           return `Q${game.period} ${game.clock}`;
         } else if (sport === 'nba') {
@@ -276,13 +329,15 @@ export default function Home() {
     const bgColor = {
       nfl: 'hover:border-blue-300',
       nba: 'hover:border-orange-300',
-      nhl: 'hover:border-gray-400'
+      nhl: 'hover:border-gray-400',
+      mlb: 'hover:border-amber-300'
     }[sport];
 
     const badgeBg = {
       nfl: 'bg-blue-100 text-blue-800',
       nba: 'bg-orange-100 text-orange-800',
-      nhl: 'bg-gray-100 text-gray-800'
+      nhl: 'bg-gray-100 text-gray-800',
+      mlb: 'bg-amber-100 text-amber-800'
     }[sport];
 
     return (
@@ -334,8 +389,11 @@ export default function Home() {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, 250px)',
                 gap: '1rem',
-                width: '100%'
+                justifyContent: 'center',
+                margin: '0 auto',
+
               }}
+              className="md:justify-start md:m-0"
             >
               {displayGames.map(game => (
                 <GameCard key={game.id} game={game} sport={sport} />
@@ -344,7 +402,7 @@ export default function Home() {
             {games.length > gamesPerRow && (
               <button
                 onClick={() => setExpandedLeagues(prev => ({ ...prev, [sport]: !isExpanded }))}
-                className="mt-4 ml-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-roboto-condensed"
+                className="mt-4 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-roboto-condensed block mx-auto md:ml-2"
               >
                 {isExpanded ? 'Show Less' : `Show More (${games.length - gamesPerRow} more)`}
               </button>
@@ -357,7 +415,7 @@ export default function Home() {
     );
   };
 
-  const allGamesEmpty = nflGames.length === 0 && nbaGames.length === 0 && nhlGames.length === 0;
+  const allGamesEmpty = nflGames.length === 0 && nbaGames.length === 0 && nhlGames.length === 0 && mlbGames.length === 0;
 
   return (
     <div className="p-6 w-full max-w-6xl mx-auto">
@@ -381,13 +439,13 @@ export default function Home() {
       </div>
 
       {/* League Selection Cards */}
-      <div className="grid grid-cols-1 place-items-center  lg:grid-cols-2 lg:grid-cols-3 gap-8  mb-12">
+      <div className="grid grid-cols-1 place-items-center md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
         {leagues.map((league) => (
           <Link
             key={league.name}
             to={league.path}
             className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
-            style={{ width: '350px', height: '350px' }}
+            style={{ width: '275px', height: '275px' }}
           >
             {/* Background image */}
             <div 
@@ -400,7 +458,7 @@ export default function Home() {
             ></div>
             
             {/* Content */}
-            <div className="relative p-12 text-white flex flex-col justify-between min-h-64">
+            <div className="relative p-8 text-white flex flex-col justify-between min-h-64">
               <div>
                 <div className="text-6xl mb-4">{league.icon}</div>
                 <h2 className="text-4xl font-bold mb-2">{league.name}</h2>
@@ -425,7 +483,7 @@ export default function Home() {
       {!allGamesEmpty && (
         <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-8">
           <div className="flex items-center justify-between mb-6 flex-col md:flex-row gap-4">
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-800 font-oswald">Today's Games</h3>
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-800 font-oswald">Schedule</h3>
             
             {/* Date Navigation */}
             <div className="flex flex-col items-center gap-3">
@@ -467,6 +525,7 @@ export default function Home() {
               {nflGames.length > 0 && <SportSection sport="nfl" games={nflGames} icon="🏈" color="blue" />}
               {nbaGames.length > 0 && <SportSection sport="nba" games={nbaGames} icon="🏀" color="orange" />}
               {nhlGames.length > 0 && <SportSection sport="nhl" games={nhlGames} icon="🏒" color="gray" />}
+              {mlbGames.length > 0 && <SportSection sport="mlb" games={mlbGames} icon="⚾" color="amber" />}
             </div>
           )}
         </div>

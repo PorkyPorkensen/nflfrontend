@@ -29,6 +29,8 @@ export default function PlayerDetailsModal({
         ? 'basketball/nba'
         : sport.toLowerCase() === 'nhl'
         ? 'hockey/nhl'
+        : sport.toLowerCase() === 'mlb'
+        ? 'baseball/mlb'
         : 'football/nfl';
       
       // Fetch team roster
@@ -109,6 +111,8 @@ export default function PlayerDetailsModal({
         return { primary: '#f97316', bg: 'orange' };
       case 'nhl':
         return { primary: '#374151', bg: 'gray' };
+      case 'mlb':
+        return { primary: '#b45309', bg: 'amber' };
       case 'nfl':
       default:
         return { primary: '#2457a8', bg: 'blue' };
@@ -127,7 +131,7 @@ export default function PlayerDetailsModal({
         <div
           className="text-white rounded-tl-lg rounded-tr-lg overflow-hidden"
           style={{
-            backgroundImage: `url(${sport.toLowerCase() === 'nba' ? '/bbBg.webp' : sport.toLowerCase() === 'nhl' ? '/hBg.png' : '/fbBg.jpg'})`,
+            backgroundImage: `url(${sport.toLowerCase() === 'nba' ? '/bbBg.webp' : sport.toLowerCase() === 'nhl' ? '/hBg.png' : sport.toLowerCase() === 'mlb' ? '/bbtBG.webp' : '/fbBg.jpg'})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
@@ -159,7 +163,7 @@ export default function PlayerDetailsModal({
               </h1>
               <div className="space-y-1 font-roboto-condensed">
                 <p className="text-lg">
-                  #{player.jersey || player.athlete?.jersey || 'N/A'} • {
+                  #{player.jersey || player.athlete?.jersey || seasonStats?.jersey || 'N/A'} • {
                     typeof player.position === 'string' 
                       ? player.position 
                       : (seasonStats?.position?.abbreviation || seasonStats?.position?.displayName || seasonStats?.position?.name || player.position?.displayName || player.position?.abbreviation || player.position?.name || player.athlete?.position?.displayName || player.athlete?.position?.abbreviation || player.athlete?.position?.name || 'N/A')
@@ -189,19 +193,19 @@ export default function PlayerDetailsModal({
               <p className="text-gray-600 text-sm mb-3">Loading player info...</p>
             )}
             <div className="grid grid-cols-2 gap-4 text-sm">
-              {(player.jersey || player.athlete?.jersey) && (
+              {(player.jersey || player.athlete?.jersey || seasonStats?.jersey) && (
                 <div>
                   <p className="text-gray-600 font-semibold">Jersey</p>
-                  <p className="text-gray-800">#{player.jersey || player.athlete?.jersey}</p>
+                  <p className="text-gray-800">#{player.jersey || player.athlete?.jersey || seasonStats?.jersey}</p>
                 </div>
               )}
-              {(player.position || player.athlete?.position) && (
+              {(player.position || player.athlete?.position || seasonStats?.position) && (
                 <div>
                   <p className="text-gray-600 font-semibold">Position</p>
                   <p className="text-gray-800">
                     {typeof player.position === 'string' ? 
                       player.position : 
-                      (player.position?.abbreviation || player.position?.name || player.athlete?.position?.abbreviation || player.athlete?.position?.name || player.athlete?.position?.displayName || 'N/A')
+                      (player.position?.abbreviation || player.position?.name || player.athlete?.position?.abbreviation || player.athlete?.position?.name || player.athlete?.position?.displayName || seasonStats?.position?.abbreviation || seasonStats?.position?.displayName || seasonStats?.position?.name || 'N/A')
                     }
                   </p>
                 </div>
@@ -218,6 +222,12 @@ export default function PlayerDetailsModal({
                   <p className="text-gray-800">{player.weight || seasonStats?.displayWeight}</p>
                 </div>
               )}
+              {(seasonStats?.throws?.abbreviation || player.throws?.abbreviation) && (
+                <div>
+                  <p className="text-gray-600 font-semibold">Throws</p>
+                  <p className="text-gray-800">{seasonStats?.throws?.abbreviation || player.throws?.abbreviation}</p>
+                </div>
+              )}
               {(player.college || player.athlete?.college?.displayName || seasonStats?.college?.displayName) && (
                 <div>
                   <p className="text-gray-600 font-semibold">College</p>
@@ -229,18 +239,10 @@ export default function PlayerDetailsModal({
                   </p>
                 </div>
               )}
-              {seasonStats?.age && (
+              {(seasonStats?.age || player.age) && (
                 <div>
                   <p className="text-gray-600 font-semibold">Age</p>
-                  <p className="text-gray-800">{seasonStats.age}</p>
-                </div>
-              )}
-              {seasonStats?.birthPlace && (
-                <div>
-                  <p className="text-gray-600 font-semibold">Hometown</p>
-                  <p className="text-gray-800">
-                    {seasonStats.birthPlace.city}, {seasonStats.birthPlace.state}
-                  </p>
+                  <p className="text-gray-800">{seasonStats?.age || player.age}</p>
                 </div>
               )}
               {seasonStats?.contract?.baseYearCompensation?.value && (
@@ -358,6 +360,36 @@ export default function PlayerDetailsModal({
                     weight: player.weight || player.athlete?.displayWeight,
                   };
                   navigate(`/nhl/player/${player.id}`, {
+                    state: { playerData: normalizedPlayer }
+                  });
+                  onClose();
+                }}
+                style={{ backgroundColor: colors.primary }}
+                className="px-6 py-2 text-white rounded-md hover:opacity-90 transition-opacity font-medium"
+              >
+                View Full Stats
+              </button>
+            )}
+            {sport.toLowerCase() === 'mlb' && player.id && (
+              <button
+                onClick={() => {
+                  // Normalize player data - flatten athlete nested structure
+                  const normalizedPlayer = {
+                    ...player,
+                    ...(player.athlete || {}),
+                    id: player.id || player.athlete?.id,
+                    displayName: player.displayName || player.athlete?.displayName,
+                    jersey: player.jersey || player.athlete?.jersey,
+                    position: player.position || player.athlete?.position,
+                    headshot: player.headshot || player.athlete?.headshot,
+                    college: player.college || player.athlete?.college,
+                    team: player.team || player.athlete?.team,
+                    birth: player.birth || player.athlete?.birth,
+                    height: player.height || player.athlete?.displayHeight,
+                    weight: player.weight || player.athlete?.displayWeight,
+                    throws: player.throws || player.athlete?.throws,
+                  };
+                  navigate(`/mlb/player/${player.id}`, {
                     state: { playerData: normalizedPlayer }
                   });
                   onClose();

@@ -16,6 +16,7 @@ export default function Header() {
     if (location.pathname.startsWith('/nfl')) return 'nfl';
     if (location.pathname.startsWith('/nba')) return 'nba';
     if (location.pathname.startsWith('/nhl')) return 'nhl';
+    if (location.pathname.startsWith('/mlb')) return 'mlb';
     return null;
   };
 
@@ -116,12 +117,22 @@ export default function Header() {
                 <NavLink
                   to="/nhl"
                   className={({ isActive }) =>
-                    `block w-full text-left px-4 py-3 hover:bg-gray-50 rounded-b-lg font-medium ${
+                    `block w-full text-left px-4 py-3 hover:bg-gray-50 font-medium ${
                       isActive ? 'bg-gray-50 text-gray-700' : 'text-gray-700'
                     }`
                   }
                 >
                   🏒 NHL
+                </NavLink>
+                <NavLink
+                  to="/mlb"
+                  className={({ isActive }) =>
+                    `block w-full text-left px-4 py-3 hover:bg-gray-50 rounded-b-lg font-medium ${
+                      isActive ? 'bg-amber-50 text-amber-700' : 'text-gray-700'
+                    }`
+                  }
+                >
+                  ⚾ MLB
                 </NavLink>
               </div>
             </div>
@@ -315,7 +326,27 @@ export default function Header() {
               >
                 🏒 NHL
               </NavLink>
+              <NavLink
+                to="/mlb"
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `block w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${
+                    isActive
+                      ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                  }`
+                }
+              >
+                ⚾ MLB
+              </NavLink>
             </div>
+
+            {/* MLB League-Specific Links for Mobile */}
+            {currentLeague === 'mlb' && (
+              <div className="border-t border-gray-200 mt-2 pt-2">
+                {/* No MLB-specific links yet */}
+              </div>
+            )}
 
             {/* Conditional League-Specific Links for Mobile */}
             {currentLeague === 'nfl' && (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import NHLGamesHeader from "./NHLGamesHeader";
 
 export default function NHLStandings() {
   const navigate = useNavigate();
@@ -201,6 +202,9 @@ export default function NHLStandings() {
 
   return (
     <div className="p-6 w-full max-w-6xl mx-auto">
+      {/* Games Header */}
+      <NHLGamesHeader />
+
       {/* Page Header */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-4 font-oswald">NHL Standings</h1>

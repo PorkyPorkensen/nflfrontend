@@ -1,36 +1,48 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import GameDetailsModal from "../../components/GameDetailsModal";
-import { FEATURES } from "../../config/features";
 
-
-export default function NHLHome() {
-  const [liveGames, setLiveGames] = useState([]);
+export default function MLBHome() {
+  const [games, setGames] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAllGames, setShowAllGames] = useState(false);
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [showGameDetails, setShowGameDetails] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Fetch games for selected date
+  // Initial fetch when date changes
+  useEffect(() => {
+    fetchGames();
+  }, [selectedDate]);
+
+  // Auto-refresh for live games
+  useEffect(() => {
+    const hasLiveGames = games.some(game => game.status === 'in');
+    
+    if (!hasLiveGames) return; // Don't fetch if no live games
+
+    // Set up interval to refresh live game data every 30 seconds
+    const interval = setInterval(fetchGames, 30000);
+
+    return () => clearInterval(interval); // Cleanup on unmount or when no live games
+  }, [games]);
+
   const fetchGames = async () => {
-    // Only show loading on initial load, not on auto-refresh
-    if (isInitialLoad) {
-      setLoading(true);
-    }
+    setLoading(true);
     try {
       // Format date as YYYYMMDD using local date values (not UTC)
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
       const dateStr = `${year}${month}${day}`;
-      const endpoint = `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=${dateStr}`;
       
-      const res = await fetch(endpoint);
-      if (res.ok) {
-        const data = await res.json();
-        const games = data.events?.map(event => {
+      const response = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${dateStr}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        const gamesData = data.events?.map(event => {
           const competition = event.competitions[0];
           const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
           const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
@@ -39,7 +51,7 @@ export default function NHLHome() {
             id: event.id,
             status: event.status.type.state,
             statusText: event.status.type.shortDetail,
-            period: event.status.period,
+            inning: event.status.period,
             clock: event.status.displayClock,
             homeTeam: {
               name: homeTeam.team.displayName,
@@ -55,42 +67,15 @@ export default function NHLHome() {
             }
           };
         }) || [];
-        setLiveGames(games);
-        if (isInitialLoad) {
-          setIsInitialLoad(false);
-        }
+        setGames(gamesData);
       }
-    } catch (err) {
-      console.error('Error fetching NHL games:', err);
+    } catch (error) {
+      console.error('Error fetching MLB games:', error);
     } finally {
-      if (isInitialLoad) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
-  // Initial fetch when date changes
-  useEffect(() => {
-    fetchGames();
-  }, [selectedDate]);
-
-  // Auto-refresh for live games every 30 seconds, even with modal open
-  useEffect(() => {
-    const hasLiveGames = liveGames.some(game => game.status === 'in');
-    
-    if (!hasLiveGames) return;
-
-    const interval = setInterval(fetchGames, 30000);
-    return () => clearInterval(interval);
-  }, [liveGames, selectedDate]);
-
-  // Handle game click to show details
-  const handleGameClick = (gameId) => {
-    setSelectedGameId(gameId);
-    setShowGameDetails(true);
-  };
-
-  // Handle date navigation
   const handlePreviousDay = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() - 1);
@@ -103,53 +88,68 @@ export default function NHLHome() {
     setSelectedDate(newDate);
   };
 
-  const handleToday = () => {
-    setSelectedDate(new Date());
+  const handleGameClick = (gameId) => {
+    setSelectedGameId(gameId);
+    setShowGameDetails(true);
   };
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
+  const formattedDate = selectedDate.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+  });
 
   return (
     <div className="p-6 w-full max-w-6xl mx-auto">
       <div className="text-center mb-4">
         <div className="flex items-center flex-col justify-center md:flex-row">
-          <img src="/nhl.svg" alt="NHL" className="h-24 md:h-48 w-auto" />
+          <img src="/mlb.webp" alt="MLB" className="h-24 md:h-60 w-auto" />
         </div>
-        <p className="text-lg text-gray-600 mb-4 mt-8">Live scores, standings, and player statistics.</p>
+        <p className="text-lg text-gray-600 mb-8 mt-4">Live scores, standings, and team information.</p>
       </div>
 
       {/* Feature Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-8 mb-8 max-w-md mx-auto">
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div className="bg-white rounded-lg shadow-md border-2 border-gray-300 p-6">
           <div className="flex items-center mb-4">
-            <div className="bg-gray-200 rounded-lg p-3 mr-4">
-              <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-amber-100 rounded-lg p-3 mr-4">
+              <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-800">League Standings</h3>
+            <h3 className="text-xl font-bold text-gray-800">Standings</h3>
           </div>
           <p className="text-gray-600 mb-4">
-            Track real-time NHL standings with division breakdowns and playoff seedings.
+            Track MLB standings with division and playoff seeding information.
           </p>
-          <Link to="/nhl/standings" className="inline-flex items-center px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors">
+          <Link to="/mlb/standings" className="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
             View Standings
             <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
         </div>
+
+        <div className="bg-white rounded-lg shadow-md border-2 border-gray-300 p-6">
+          <div className="flex items-center mb-4">
+            <div className="bg-gray-100 rounded-lg p-3 mr-4">
+              <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Player Stats</h3>
+          </div>
+          <p className="text-gray-600 mb-4">
+            View detailed player statistics and career information.
+          </p>
+          <button disabled className="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
+            Coming Soon
+          </button>
+        </div>
       </div>
 
-      {/* Live Games Section */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+      {/* Scores Section */}
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-8">
         <div className="flex items-center justify-between mb-6 flex-col md:flex-row gap-4">
           <h3 className="text-xl md:text-3xl font-bold text-gray-800 font-oswald">Schedule</h3>
           
@@ -158,54 +158,46 @@ export default function NHLHome() {
             <div className="flex items-center gap-2">
               <button 
                 onClick={handlePreviousDay}
-                className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors"
+                className="px-3 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
               >
                 ←
               </button>
-              <div className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold min-w-48 text-center font-roboto-condensed">
-                {formatDate(selectedDate)}
-              </div>
+              <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold min-w-32 text-center font-roboto-mono">
+                {formattedDate}
+              </span>
               <button 
                 onClick={handleNextDay}
-                className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors"
+                className="px-3 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
               >
                 →
               </button>
             </div>
-            {selectedDate.toDateString() !== new Date().toDateString() && (
-              <button
-                onClick={handleToday}
-                className="px-4 py-1 text-sm bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
-              >
-                Go to Today
-              </button>
-            )}
           </div>
         </div>
 
         {/* Show All Games Toggle */}
-        {liveGames.length > 6 && (
+        {games.length > 6 && (
           <div className="flex justify-center mb-6">
             <button
               onClick={() => setShowAllGames(!showAllGames)}
-              className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-700"
+              className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
-              {showAllGames ? 'Show Less' : `Show All Games (${liveGames.length})`}
+              {showAllGames ? 'Show Less' : `Show All Games (${games.length})`}
             </button>
           </div>
         )}
 
         {/* Games Grid */}
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
           </div>
-        ) : liveGames.length > 0 ? (
+        ) : games.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(showAllGames ? liveGames : liveGames.slice(0, 6)).map(game => (
+            {(showAllGames ? games : games.slice(0, 6)).map(game => (
               <div 
                 key={game.id} 
-                className="bg-gray-50 border-2 border-gray-200 rounded-lg shadow-sm p-5 cursor-pointer hover:shadow-lg hover:border-gray-400 transition-all duration-200"
+                className="bg-gray-50 border-2 border-gray-200 rounded-lg shadow-sm p-5 cursor-pointer hover:shadow-lg hover:border-amber-300 transition-all duration-200"
                 onClick={() => handleGameClick(game.id)}
               >
                 {/* Game Status */}
@@ -214,10 +206,10 @@ export default function NHLHome() {
                     game.status === 'in' 
                       ? 'bg-red-100 text-red-800' 
                       : game.status === 'pre'
-                      ? 'bg-blue-100 text-blue-800'
+                      ? 'bg-amber-100 text-amber-800'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {game.status === 'in' && game.clock ? (game.period > 3 ? `OT ${game.clock}` : `${game.period}${['st', 'nd', 'rd'][game.period - 1] || 'th'} ${game.clock}`) : game.statusText}
+                    {game.statusText}
                   </span>
                 </div>
 
@@ -262,9 +254,16 @@ export default function NHLHome() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500 font-roboto-condensed">No games scheduled for {formatDate(selectedDate)}</p>
+            <p className="text-gray-500 font-roboto-condensed">No games on {formattedDate}</p>
           </div>
         )}
+      </div>
+
+      {/* Back to leagues */}
+      <div className="text-center">
+        <Link to="/" className="inline-flex items-center px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-lg font-semibold">
+          ← Back to League Selection
+        </Link>
       </div>
 
       {/* Game Details Modal */}
@@ -275,7 +274,7 @@ export default function NHLHome() {
           setShowGameDetails(false);
           setSelectedGameId(null);
         }}
-        sport="nhl"
+        sport="mlb"
       />
     </div>
   );

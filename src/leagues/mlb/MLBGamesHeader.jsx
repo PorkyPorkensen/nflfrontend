@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import GameDetailsModal from "../../components/GameDetailsModal";
 
-export default function NBAGamesHeader() {
+export default function MLBGamesHeader() {
   const [liveGames, setLiveGames] = useState([]);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showAllGames, setShowAllGames] = useState(false);
@@ -28,7 +28,7 @@ export default function NBAGamesHeader() {
     return () => window.removeEventListener('resize', updateScreenSize);
   }, []);
 
-  // Fetch NBA live games
+  // Fetch MLB games
   const tryScoreboardAPI = async () => {
     // Format date as YYYYMMDD for ESPN API
     const year = selectedDate.getFullYear();
@@ -36,72 +36,46 @@ export default function NBAGamesHeader() {
     const day = String(selectedDate.getDate()).padStart(2, '0');
     const formattedDate = `${year}${month}${day}`;
 
-    const endpoints = [
-      `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}`,
-      `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}&seasontype=2`
-    ];
+    const endpoint = `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${formattedDate}`;
 
-    for (const endpoint of endpoints) {
-      try {
-        const res = await fetch(endpoint);
-        if (res.ok) {
-          const data = await res.json();
+    try {
+      const res = await fetch(endpoint);
+      if (res.ok) {
+        const data = await res.json();
+        
+        const games = data.events?.map(event => {
+          const competition = event.competitions[0];
+          const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
+          const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
           
-          const games = data.events?.map(event => {
-            const competition = event.competitions[0];
-            const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
-            const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
-            
-            return {
-              id: event.id,
-              status: event.status.type.state,
-              statusText: event.status.type.shortDetail,
-              period: event.status.period,
-              clock: event.status.displayClock,
-              homeTeam: {
-                name: homeTeam.team.displayName,
-                abbreviation: homeTeam.team.abbreviation,
-                logo: homeTeam.team.logo,
-                score: homeTeam.score
-              },
-              awayTeam: {
-                name: awayTeam.team.displayName,
-                abbreviation: awayTeam.team.abbreviation,
-                logo: awayTeam.team.logo,
-                score: awayTeam.score
-              }
-            };
-          }) || [];
-          setLiveGames(games);
-          return;
-        }
-      } catch (err) {
-        // console.log(`Endpoint failed: ${endpoint}`, err);
+          return {
+            id: event.id,
+            status: event.status.type.state,
+            statusText: event.status.type.shortDetail,
+            inning: event.status.inning,
+            displayClock: event.status.displayClock,
+            homeTeam: {
+              name: homeTeam.team.displayName,
+              abbreviation: homeTeam.team.abbreviation,
+              logo: homeTeam.team.logo,
+              score: homeTeam.score
+            },
+            awayTeam: {
+              name: awayTeam.team.displayName,
+              abbreviation: awayTeam.team.abbreviation,
+              logo: awayTeam.team.logo,
+              score: awayTeam.score
+            }
+          };
+        }) || [];
+        setLiveGames(games);
+        return;
       }
+    } catch (err) {
+      console.error('Error fetching MLB games:', err);
     }
     
-    // If all endpoints fail, create some mock data for testing
-    setLiveGames([
-      {
-        id: 'mock1',
-        status: 'in',
-        statusText: '2nd Qtr',
-        period: 2,
-        clock: '8:42',
-        homeTeam: {
-          name: 'Los Angeles Lakers',
-          abbreviation: 'LAL',
-          logo: 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
-          score: '62'
-        },
-        awayTeam: {
-          name: 'Boston Celtics',
-          abbreviation: 'BOS',
-          logo: 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
-          score: '58'
-        }
-      }
-    ]);
+    setLiveGames([]);
   };
 
   // Initial fetch when date changes
@@ -113,12 +87,10 @@ export default function NBAGamesHeader() {
   useEffect(() => {
     const hasLiveGames = liveGames.some(game => game.status === 'in');
     
-    if (!hasLiveGames) return; // Don't fetch if no live games
+    if (!hasLiveGames) return;
 
-    // Set up interval to refresh live game data
     const interval = setInterval(tryScoreboardAPI, 30000);
-
-    return () => clearInterval(interval); // Cleanup on unmount or when no live games
+    return () => clearInterval(interval);
   }, [liveGames]);
 
   // Get default number of games to show based on screen size
@@ -177,14 +149,14 @@ export default function NBAGamesHeader() {
   }
 
   return (
-    <div className="p-6 w-full max-w-6xl mx-auto mb-8">
+    <div className="p-06 w-full max-w-6xl mx-auto mb-8">
       <div className="mb-4">
         {/* Date Navigation */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <div className="flex items-center gap-2 justify-center md:justify-start">
             <button 
               onClick={handlePreviousDay}
-              className="px-2 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors font-semibold"
+              className="px-2 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors font-semibold"
             >
               ←
             </button>
@@ -193,7 +165,7 @@ export default function NBAGamesHeader() {
             </span>
             <button 
               onClick={handleNextDay}
-              className="px-2 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors font-semibold"
+              className="px-2 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors font-semibold"
             >
               →
             </button>
@@ -202,13 +174,13 @@ export default function NBAGamesHeader() {
             type="date"
             value={formatDateForInput(selectedDate)}
             onChange={handleDateChange}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-roboto-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-roboto-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
           
           {liveGames.length > getDefaultGameCount() && (
             <button
               onClick={() => setShowAllGames(!showAllGames)}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 max-w-xs md:max-w-none w-full md:w-auto"
+              className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 max-w-xs md:max-w-none w-full md:w-auto"
             >
               {showAllGames ? 'Show Less' : `Show All (${liveGames.length})`}
             </button>
@@ -220,7 +192,7 @@ export default function NBAGamesHeader() {
         {(showAllGames ? liveGames : liveGames.slice(0, getDefaultGameCount())).map(game => (
           <div 
             key={game.id} 
-            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 w-56 flex-shrink-0 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all duration-200"
+            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 w-56 flex-shrink-0 cursor-pointer hover:shadow-md hover:border-amber-300 transition-all duration-200"
             onClick={() => handleGameClick(game.id)}
           >
             {/* Game Status */}
@@ -229,10 +201,10 @@ export default function NBAGamesHeader() {
                 game.status === 'in' 
                   ? 'bg-red-100 text-red-800' 
                   : game.status === 'pre'
-                  ? 'bg-orange-100 text-orange-800'
+                  ? 'bg-amber-100 text-amber-800'
                   : 'bg-gray-100 text-gray-800'
               }`}>
-                {game.status === 'in' && game.clock ? `Q${game.period} ${game.clock}` : game.statusText}
+                {game.status === 'in' && game.inning ? `Inning ${game.inning}` : game.statusText}
               </span>
             </div>
 
@@ -250,7 +222,7 @@ export default function NBAGamesHeader() {
             </div>
 
             {/* Home Team */}
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <img 
                   src={game.homeTeam.logo} 
@@ -261,25 +233,19 @@ export default function NBAGamesHeader() {
               </div>
               <span className="font-bold text-lg font-roboto-mono">{game.homeTeam.score}</span>
             </div>
-
-            {/* Click for details hint */}
-            <div className="text-center mt-2 pt-2 border-t border-gray-100">
-              <span className="text-xs text-gray-500 font-roboto-condensed">Click for details</span>
-            </div>
           </div>
         ))}
       </div>
 
       {/* Game Details Modal */}
-      <GameDetailsModal
-        gameId={selectedGameId}
-        isOpen={showGameDetails}
-        sport="nba"
-        onClose={() => {
-          setShowGameDetails(false);
-          setSelectedGameId(null);
-        }}
-      />
+      {showGameDetails && (
+        <GameDetailsModal
+          gameId={selectedGameId}
+          sport="mlb"
+          isOpen={showGameDetails}
+          onClose={() => setShowGameDetails(false)}
+        />
+      )}
     </div>
   );
 }

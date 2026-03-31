@@ -4,9 +4,11 @@ import Home from './Home';
 import NFLHome from './leagues/nfl/NFLHome';
 import NBAHome from './leagues/nba/NBAHome';
 import NHLHome from './leagues/nhl/NHLHome';
+import MLBHome from './leagues/mlb/MLBHome';
 import Standings from './leagues/nfl/Standings';
 import NBAStandings from './leagues/nba/NBAStandings';
 import NHLStandings from './leagues/nhl/NHLStandings';
+import MLBStandings from './leagues/mlb/MLBStandings';
 import BracketMaker from './components/BracketMaker';
 import Leaderboard from './components/Leaderboard';
 import PlayerStats from './leagues/nfl/PlayerStats';
@@ -15,6 +17,8 @@ import TeamPage from './leagues/nfl/TeamPage';
 import NBATeamPage from './leagues/nba/NBATeamPage';
 import NHLTeamPage from './leagues/nhl/NHLTeamPage';
 import NHLPlayerStats from './leagues/nhl/NHLPlayerStats';
+import MLBTeamPage from './leagues/mlb/MLBTeamPage';
+import MLBPlayerStats from './leagues/mlb/MLBPlayerStats';
 import { AuthProvider } from './firebase/AuthContext';
 import { FEATURES } from './config/features';
 
@@ -51,6 +55,14 @@ export default function App() {
               <Route path="standings" element={<NHLStandings />} />
               <Route path="team/:teamId" element={<NHLTeamPage />} />
               <Route path="player/:playerId" element={<NHLPlayerStats />} />
+            </Route>
+
+            {/* MLB routes */}
+            <Route path="mlb">
+              <Route index element={<MLBHome />} />
+              <Route path="standings" element={<MLBStandings />} />
+              <Route path="team/:teamId" element={<MLBTeamPage />} />
+              <Route path="player/:playerId" element={<MLBPlayerStats />} />
             </Route>
 
             {/* Legacy redirects for existing bookmarks */}
