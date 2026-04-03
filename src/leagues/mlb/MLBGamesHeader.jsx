@@ -204,7 +204,7 @@ export default function MLBGamesHeader() {
                   ? 'bg-amber-100 text-amber-800'
                   : 'bg-gray-100 text-gray-800'
               }`}>
-                {game.status === 'in' && game.inning ? `Inning ${game.inning}` : game.statusText}
+                {game.statusText}
               </span>
             </div>
 

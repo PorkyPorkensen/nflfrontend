@@ -316,7 +316,8 @@ export default function Home() {
         if (sport === 'nhl' && game.period > 3) {
           return `OT ${game.clock}`;
         } else if (sport === 'mlb') {
-          return `${game.period ? `Inning ${game.period}` : 'Live'} ${game.clock}`;
+          // For MLB, statusText already contains "Top 8th" etc.
+          return game.statusText;
         } else if (sport === 'nfl') {
           return `Q${game.period} ${game.clock}`;
         } else if (sport === 'nba') {
