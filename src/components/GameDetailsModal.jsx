@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PlayerDetailsModal from "./PlayerDetailsModal";
+import {
+  getDisplayColumnConfig,
+  getDisplayedTeamStats,
+  getMergedPlayerStatsForGroup,
+  getStatHeaderTooltip,
+  getStatLabel,
+  sortPlayersForSport
+} from "./gameDetails/statHelpers";
 
 export default function GameDetailsModal({ gameId, onClose, isOpen, sport = 'nfl' }) {
   const navigate = useNavigate();
@@ -211,6 +219,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
   
   const getSportLower = () => (sport || 'nfl').toLowerCase();
   const { header, boxscore, gameInfo, drives, leaders, winprobability, pickcenter, broadcasts, news } = gameDetails;
+
   
   // Enhanced team click handler for NFL that just passes the team ID
   const handleNFLTeamClick = (basicTeam) => {
@@ -226,6 +235,19 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
   const competition = header?.competitions?.[0];
   const homeTeam = competition?.competitors?.find(team => team.homeAway === 'home');
   const awayTeam = competition?.competitors?.find(team => team.homeAway === 'away');
+
+  useEffect(() => {
+    if (!Array.isArray(boxscore?.teams) || boxscore.teams.length === 0) return;
+
+    const availableTeamStats = boxscore.teams.map((team) => ({
+      team: team?.team?.displayName || team?.team?.abbreviation || 'Unknown Team',
+      stats: Array.isArray(team?.statistics)
+        ? team.statistics.map((stat) => stat?.abbreviation || stat?.name || 'Unknown Stat')
+        : []
+    }));
+
+    console.log('Available team stats:', availableTeamStats);
+  }, [boxscore?.teams]);
 
   // ESPN does not always return the same betting shape across games/seasons.
   const pickcenterLines = Array.isArray(pickcenter)
@@ -248,148 +270,6 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
     : [];
   const bettingLines = pickcenterLines.length > 0 ? pickcenterLines : competitionOddsLines;
 
-  // Helper function to get custom stat label for sport-specific stats
-  const getStatLabel = (statName) => {
-    const sportLower = getSportLower();
-    
-    // MLB stat labels
-    const mlbLabels = {
-      'hits': 'H',
-      'runs': 'R',
-      'homeRuns': 'HR',
-      'runsBattedIn': 'RBI',
-      'strikeOuts': 'K',
-      'walks': 'BB',
-      'hitByPitch': 'HBP',
-      'plateAppearances': 'PA',
-      'battingAverage': 'AVG',
-      'onBasePct': 'OBP',
-      'sluggingPct': 'SLG',
-      'earnedRun': 'ER',
-      'wins': 'W',
-      'losses': 'L',
-      'saves': 'SV',
-      'inningsPitched': 'IP',
-      'strikeouts': 'K',
-      'walks': 'BB',
-      'era': 'ERA',
-      'pitchCount': 'PC'
-    };
-    
-    // NBA stat labels
-    const nbaLabels = {
-      'fieldGoalsMade-fieldGoalsAttempted': 'FG',
-      'threePointFieldGoalsMade-threePointFieldGoalsAttempted': '3PT',
-      'freeThrowsMade-freeThrowsAttempted': 'FT',
-      'fieldGoalPct': 'FG%',
-      'threePointFieldGoalPct': '3P%',
-      'freeThrowPct': 'FT%',
-      'totalRebounds': 'RB',
-      'offensiveRebounds': 'ORB',
-      'defensiveRebounds': 'DRB',
-      'assists': 'A',
-      'steals': 'STL',
-      'blocks': 'BLK',
-      'turnovers': 'TO',
-      // Pre-game team stats
-      'streak': 'Streak',
-      'lastTenGames': 'L10',
-      'avgPoints': 'PF',
-      'avgPointsAgainst': 'PA',
-      'avgRebounds': 'REB',
-      'avgAssists': 'A',
-      'avgBlocks': 'BLK',
-      'avgSteals': 'STL'
-    };
-    
-    const labels = sportLower === 'mlb' ? mlbLabels : nbaLabels;
-    return labels[statName] || statName;
-  };
-
-  // Helper function to define stat display order and filter
-  const getStatOrder = () => [
-    'streak',
-    'lastTenGames',
-    'avgPoints',
-    'avgPointsAgainst',
-    'fieldGoalPct',
-    'threePointFieldGoalPct',
-    'avgRebounds',
-    'avgAssists',
-    'avgBlocks',
-    'avgSteals'
-  ];
-
-  // Helper function to detect if stats are pre-game stats (vs live game stats)
-  const isPreGameStats = (stats) => {
-    if (!Array.isArray(stats) || stats.length === 0) return false;
-    // Pre-game stats include names like 'streak', 'avgPoints', 'lastTenGames', etc.
-    return stats.some(stat => 
-      stat?.name && ['streak', 'lastTenGames', 'avgPoints', 'avgPointsAgainst', 'avgRebounds', 'avgAssists', 'avgBlocks', 'avgSteals'].includes(stat.name)
-    );
-  };
-
-  // Helper function to reorder and filter stats
-  const reorderStats = (stats) => {
-    if (!Array.isArray(stats)) return stats;
-    
-    // If these are pre-game stats, reorder them
-    if (isPreGameStats(stats)) {
-      const statOrder = getStatOrder();
-      const statMap = {};
-      
-      // Create a map of stats by name
-      stats.forEach(stat => {
-        if (stat?.name) {
-          statMap[stat.name] = stat;
-        }
-      });
-      
-      // Reorder stats according to statOrder, only including those that exist
-      const reordered = statOrder
-        .map(statName => statMap[statName])
-        .filter(stat => stat !== undefined);
-      
-      return reordered;
-    }
-    
-    // For live game stats, return as-is
-    return stats;
-  };
-
-  // Filter stats for NBA (up to and including turnovers)
-  const getFilteredStats = (stats) => {
-    if (getSportLower() !== 'nba' || !Array.isArray(stats)) return stats;
-    
-    const turnoversIndex = stats.findIndex(stat => 
-      stat?.name?.toLowerCase().includes('turnover')
-    );
-    
-    if (turnoversIndex !== -1) {
-      return stats.slice(0, turnoversIndex + 1);
-    }
-    return stats;
-  };
-
-  // Helper function to get MLB team stats organized by category
-  const getMLBTeamStats = (team) => {
-    if (!team?.statistics) return [];
-    
-    // MLB stats are organized by group (batting, pitching, fielding)
-    const stats = team.statistics;
-    if (Array.isArray(stats) && stats.length > 0) {
-      // Check if it's grouped by category
-      if (stats[0]?.name && ['batting', 'pitching', 'fielding'].includes(stats[0].name.toLowerCase())) {
-        // It's organized by category, flatten with labels
-        return stats.map((group, idx) => ({
-          ...group,
-          abbreviation: group.name || `Stat ${idx + 1}`,
-          displayValue: group.displayValue || '-'
-        }));
-      }
-    }
-    return stats || [];
-  };
 
   // Helper function to format team data for NBATeamModal
   const formatTeamForModal = (teamData) => {
@@ -469,6 +349,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
     
     return '';
   };
+
   
   // console.log('Parsed teams:', { homeTeam, awayTeam });
   // console.log('Home team logo paths:', {
@@ -593,7 +474,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
       {/* Team Stats - Full width centered section */}
       {(getSportLower() !== 'mlb' || (getSportLower() === 'mlb' && header?.competitions?.[0]?.status?.type?.state === 'pre')) && boxscore?.teams && Array.isArray(boxscore.teams) && boxscore.teams.length > 0 && (
         <div className="flex justify-center">
-          <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-300 w-full md:mb-8" style={{maxWidth: '500px'}}>
+          <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-300 w-full md:mb-8" style={{ width: '90%' }}>
             {getSportLower() === 'mlb' && header?.competitions?.[0]?.status?.type?.state === 'pre' ? (
               // MLB: Show game projection win percentage (only for scheduled games)
               <>
@@ -655,14 +536,20 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
               <>
                 <h3 className="text-lg font-semibold mb-3 font-oswald">Team Stats</h3>
                 <div className="overflow-x-auto">
+                  {(() => {
+                    const headerStats = Array.isArray(boxscore.teams[0]?.statistics)
+                      ? getDisplayedTeamStats(boxscore.teams[0].statistics, sport, header?.competitions?.[0]?.status?.type?.state)
+                      : [];
+
+                    return (
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2 pr-6">Team</th>
-                        {Array.isArray(boxscore.teams[0]?.statistics) && reorderStats(boxscore.teams[0].statistics).map((stat, idx) => (
-                          <th key={idx} className="text-center px-3 py-2 whitespace-nowrap">
-                            {getSportLower() === 'nba' 
-                              ? getStatLabel(stat?.name || stat?.abbreviation || `Stat ${idx + 1}`)
+                        {headerStats.map((stat, idx) => (
+                          <th key={idx} className="text-center px-3 py-2 whitespace-nowrap" title={getStatHeaderTooltip(stat, sport)}>
+                            {(getSportLower() === 'nba' || getSportLower() === 'nfl') 
+                              ? getStatLabel(stat?.name || stat?.abbreviation || `Stat ${idx + 1}`, sport)
                               : (stat?.abbreviation || stat?.name || `Stat ${idx + 1}`)
                             }
                           </th>
@@ -671,7 +558,17 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                     </thead>
                     <tbody>
                       {boxscore.teams.map((team, idx) => {
-                        const reorderedTeamStats = reorderStats(team?.statistics);
+                        const displayedTeamStats = getDisplayedTeamStats(team?.statistics, sport, header?.competitions?.[0]?.status?.type?.state);
+                        const teamStatsByName = {};
+
+                        displayedTeamStats.forEach((stat) => {
+                          if (stat?.name) {
+                            teamStatsByName[stat.name] = stat;
+                          }
+                        });
+
+                        const orderedTeamStats = headerStats.map((headerStat) => teamStatsByName[headerStat?.name]);
+
                         return (
                           <tr key={idx} className="border-b">
                             <td className="py-2 pr-6">
@@ -687,7 +584,7 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                                 <span className="font-medium">{team?.team?.abbreviation || 'Team'}</span>
                               </div>
                             </td>
-                            {Array.isArray(reorderedTeamStats) && reorderedTeamStats.map((stat, statIdx) => (
+                            {orderedTeamStats.map((stat, statIdx) => (
                               <td key={statIdx} className="text-center px-3 py-2">{stat?.displayValue || stat?.value || 'N/A'}</td>
                             ))}
                           </tr>
@@ -695,12 +592,87 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                       })}
                     </tbody>
                   </table>
+                    );
+                  })()}
                 </div>
               </>
             )}
           </div>
         </div>
       )}
+
+      {/* Player Box Score */}
+      {boxscore?.players && Array.isArray(boxscore.players) && boxscore.players.some((pg) =>
+        Array.isArray(pg?.statistics) && pg.statistics.some((statGroup) => Array.isArray(statGroup?.athletes) && statGroup.athletes.length > 0)
+      ) && (
+        <div className="mt-6 bg-gray-50 rounded-lg p-4 border border-gray-300">
+          <h3 className="text-lg font-semibold mb-3 font-oswald">Player Box Score</h3>
+          <div className="overflow-x-auto">
+            {boxscore.players.map((playerGroup, groupIdx) => {
+              const mergedGroup = getMergedPlayerStatsForGroup(playerGroup);
+              const players = mergedGroup.players;
+              const sortedPlayers = sortPlayersForSport(players, mergedGroup.labels, sport);
+              const displayColumns = getDisplayColumnConfig(mergedGroup.labels, sport);
+              
+              if (players.length === 0 || displayColumns.length === 0) return null;
+              
+              return (
+                <div key={groupIdx} className="mb-6">
+                  <h4 className="text-sm font-semibold mb-2 text-gray-700">{String(playerGroup?.team?.displayName || 'Team')}</h4>
+                  <table className="w-full text-xs md:text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 pr-4">Player</th>
+                        {displayColumns.map((column, idx) => (
+                          <th key={idx} className="text-center px-2 py-2 whitespace-nowrap text-xs">
+                            {column.heading}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedPlayers.map((playerEntry, playerIdx) => (
+                        <tr 
+                          key={playerIdx} 
+                          className="border-b hover:bg-gray-100 cursor-pointer transition-colors"
+                          onClick={() => {
+                            // Get the team info for fetching roster data
+                            const teamId = playerGroup?.team?.id || '';
+                            onPlayerClick(
+                              {
+                                id: playerEntry?.athlete?.id,
+                                athlete: playerEntry?.athlete,
+                                playerGroupIdx: groupIdx
+                              },
+                              teamId,
+                              playerEntry?.stats
+                            );
+                          }}
+                        >
+                          <td className="py-2 pr-4">
+                            <p className="font-medium">
+                              {String(playerEntry?.athlete?.displayName || 'Unknown')}
+                              {playerEntry?.athlete?.position?.abbreviation && (
+                                <span className="text-xs text-gray-500 ml-2">({String(playerEntry.athlete.position.abbreviation)})</span>
+                              )}
+                            </p>
+                          </td>
+                          {displayColumns.map((column, statIdx) => (
+                            <td key={statIdx} className="text-center px-2 py-2 text-xs">
+                              {playerEntry?.stats?.[column.index] || '0'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
             {/* Win Probability - Only show for live games */}
         {winprobability && Array.isArray(winprobability) && winprobability.length > 0 && 
          header?.competitions?.[0]?.status?.type?.state === 'in' && (
@@ -929,72 +901,6 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
 
         {/* Broadcasts */}
         {/* Removed: Broadcast Information section to make room for Win Probability */}
-
-      {/* Player Box Score */}
-      {boxscore?.players && Array.isArray(boxscore.players) && boxscore.players.some(pg => pg?.statistics?.[0]?.athletes?.length > 0) && (
-        <div className="mt-6 bg-gray-50 rounded-lg p-4 border border-gray-300">
-          <h3 className="text-lg font-semibold mb-3 font-oswald">Player Box Score</h3>
-          <div className="overflow-x-auto">
-            {boxscore.players.map((playerGroup, groupIdx) => {
-              const stats = playerGroup?.statistics?.[0];
-              const players = stats?.athletes || [];
-              
-              if (players.length === 0) return null;
-              
-              return (
-                <div key={groupIdx} className="mb-6">
-                  <h4 className="text-sm font-semibold mb-2 text-gray-700">{String(playerGroup?.team?.displayName || 'Team')}</h4>
-                  <table className="w-full text-xs md:text-sm">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-2 pr-4">Player</th>
-                        {stats?.labels && Array.isArray(stats.labels) && stats.labels.map((label, idx) => (
-                          <th key={idx} className="text-center px-2 py-2 whitespace-nowrap text-xs">
-                            {label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {players.map((playerEntry, playerIdx) => (
-                        <tr 
-                          key={playerIdx} 
-                          className="border-b hover:bg-gray-100 cursor-pointer transition-colors"
-                          onClick={() => {
-                            // Get the team info for fetching roster data
-                            const teamId = playerGroup?.team?.id || '';
-                            onPlayerClick(
-                              {
-                                id: playerEntry?.athlete?.id,
-                                athlete: playerEntry?.athlete,
-                                playerGroupIdx: groupIdx
-                              },
-                              teamId,
-                              playerEntry?.stats
-                            );
-                          }}
-                        >
-                          <td className="py-2 pr-4">
-                            <p className="font-medium">
-                              {String(playerEntry?.athlete?.displayName || 'Unknown')}
-                              {playerEntry?.athlete?.position?.abbreviation && (
-                                <span className="text-xs text-gray-500 ml-2">({String(playerEntry.athlete.position.abbreviation)})</span>
-                              )}
-                            </p>
-                          </td>
-                          {Array.isArray(playerEntry?.stats) && playerEntry.stats.map((stat, statIdx) => (
-                            <td key={statIdx} className="text-center px-2 py-2 text-xs">{stat || '0'}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Recent News */}
       {news?.articles && Array.isArray(news.articles) && news.articles.length > 0 && (
