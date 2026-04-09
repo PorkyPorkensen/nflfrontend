@@ -437,6 +437,16 @@ export default function Header() {
             
             {/* Mobile Auth Section */}
             <div className="border-t border-gray-200 pt-3 mt-3">
+              <a
+                href="/privacy-policy.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={closeMenu}
+                className="block w-full text-left px-4 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg"
+              >
+                Privacy Policy
+              </a>
+
               {currentUser ? (
                 <div className="space-y-2">
                   <button

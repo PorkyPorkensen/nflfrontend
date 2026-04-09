@@ -18,6 +18,20 @@ export default function Layout() {
       
       {/* Page Content */}
       <Outlet />
+
+      {/* Footer */}
+      <footer className="mt-10 border-t border-gray-200 bg-white">
+        <div className="max-w-6xl mx-auto px-6 py-4 text-center">
+          <a
+            href="/privacy-policy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-gray-600 hover:text-gray-800 underline"
+          >
+            Privacy Policy
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
