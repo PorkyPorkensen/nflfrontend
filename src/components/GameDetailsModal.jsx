@@ -235,6 +235,14 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
   const competition = header?.competitions?.[0];
   const homeTeam = competition?.competitors?.find(team => team.homeAway === 'home');
   const awayTeam = competition?.competitors?.find(team => team.homeAway === 'away');
+  const seriesList = Array.isArray(competition?.series)
+    ? competition.series
+    : (competition?.series ? [competition.series] : []);
+  const playoffSeries = seriesList.find(series => series?.type === 'playoff' && !series?.completed)
+    || seriesList.find(series => series?.type === 'playoff')
+    || null;
+  const playoffSeriesHeadline = playoffSeries?.description || '';
+  const playoffSeriesSummary = playoffSeries?.summary || '';
 
   useEffect(() => {
     if (!Array.isArray(boxscore?.teams) || boxscore.teams.length === 0) return;
@@ -428,6 +436,11 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
         <div className="text-center">
           {header?.competitions?.[0]?.date ? (
             <>
+              {playoffSeriesSummary && (
+                <p className="text-sm md:text-base font-roboto-condensed text-gray-700 mb-1 font-semibold">
+                  {playoffSeriesSummary}
+                </p>
+              )}
               <p className="text-base md:text-lg font-medium font-roboto-condensed">
                 {new Date(header.competitions[0].date).toLocaleDateString('en-US', { 
                   weekday: 'long', 
@@ -443,18 +456,14 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                   timeZoneName: 'short'
                 })}
               </p>
-              <p className="text-xs md:text-sm font-roboto-condensed text-gray-500 mt-1">
-                {String(header?.competitions?.[0]?.status?.type?.detail || 'Game Status')}
-              </p>
+              {header?.competitions?.[0]?.status?.type?.state !== 'pre' && (
+                <p className="text-xs md:text-sm font-roboto-condensed text-gray-500 mt-1">
+                  {String(header?.competitions?.[0]?.status?.type?.detail || 'Game Status')}
+                </p>
+              )}
             </>
           ) : (
             <p className="text-base md:text-lg font-medium font-roboto-condensed">{String(header?.competitions?.[0]?.status?.type?.detail || 'Game Status')}</p>
-          )}
-          {gameInfo?.venue && (
-            <p className="text-gray-600 font-roboto-condensed text-sm md:text-base mt-2">
-              {String(gameInfo.venue.fullName || 'Stadium')}
-              {gameInfo.venue.address?.city ? ` • ${String(gameInfo.venue.address.city)}` : ''}
-            </p>
           )}
         </div>
 
@@ -766,6 +775,15 @@ function GameDetailsContent({ gameDetails, onClose, sport = 'nfl', colors = { bg
                   hour: 'numeric',
                   minute: '2-digit'
                 })}</p>
+              )}
+              {gameInfo?.venue && (
+                <p>
+                  <span className="font-medium">Venue:</span> {String(gameInfo.venue.fullName || 'Stadium')}
+                  {gameInfo.venue.address?.city ? ` • ${String(gameInfo.venue.address.city)}` : ''}
+                </p>
+              )}
+              {playoffSeriesHeadline && (
+                <p><span className="font-medium">Series:</span> {playoffSeriesHeadline}</p>
               )}
               {/* Show season info */}
               {header?.season && (

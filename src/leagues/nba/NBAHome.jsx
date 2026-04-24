@@ -46,12 +46,19 @@ export default function NBAHome() {
           const competition = event.competitions[0];
           const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
           const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
+          const seriesData = Array.isArray(competition.series)
+            ? (competition.series.find(series => series?.type === 'playoff' && !series?.completed)
+              || competition.series.find(series => series?.type === 'playoff')
+              || null)
+            : (competition.series?.type === 'playoff' ? competition.series : null);
           
           return {
             id: event.id,
             status: event.status.type.state,
             statusText: event.status.type.shortDetail,
             clock: event.status.displayClock,
+            seriesHeadline: seriesData?.description || '',
+            seriesSummary: seriesData?.summary || '',
             homeTeam: {
               name: homeTeam.team.displayName,
               abbreviation: homeTeam.team.abbreviation,
@@ -209,6 +216,16 @@ export default function NBAHome() {
                   }`}>
                     {game.status === 'in' && game.clock ? game.statusText : game.statusText}
                   </span>
+                  {(game.seriesHeadline || game.seriesSummary) && (
+                    <div className="mt-2 space-y-1">
+                      {game.seriesHeadline && (
+                        <p className="text-xs font-semibold text-gray-700 font-roboto-condensed">{game.seriesHeadline}</p>
+                      )}
+                      {game.seriesSummary && (
+                        <p className="text-xs text-gray-600 font-roboto-condensed">{game.seriesSummary}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Away Team */}

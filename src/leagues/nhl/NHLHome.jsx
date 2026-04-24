@@ -34,6 +34,11 @@ export default function NHLHome() {
           const competition = event.competitions[0];
           const homeTeam = competition.competitors.find(team => team.homeAway === 'home');
           const awayTeam = competition.competitors.find(team => team.homeAway === 'away');
+          const seriesData = Array.isArray(competition.series)
+            ? (competition.series.find(series => series?.type === 'playoff' && !series?.completed)
+              || competition.series.find(series => series?.type === 'playoff')
+              || null)
+            : (competition.series?.type === 'playoff' ? competition.series : null);
           
           return {
             id: event.id,
@@ -41,6 +46,8 @@ export default function NHLHome() {
             statusText: event.status.type.shortDetail,
             period: event.status.period,
             clock: event.status.displayClock,
+            seriesHeadline: seriesData?.description || '',
+            seriesSummary: seriesData?.summary || '',
             homeTeam: {
               name: homeTeam.team.displayName,
               abbreviation: homeTeam.team.abbreviation,
@@ -219,6 +226,16 @@ export default function NHLHome() {
                   }`}>
                     {game.status === 'in' && game.clock ? (game.period > 3 ? `OT ${game.clock}` : `${game.period}${['st', 'nd', 'rd'][game.period - 1] || 'th'} ${game.clock}`) : game.statusText}
                   </span>
+                  {(game.seriesHeadline || game.seriesSummary) && (
+                    <div className="mt-2 space-y-1">
+                      {game.seriesHeadline && (
+                        <p className="text-xs font-semibold text-gray-700 font-roboto-condensed">{game.seriesHeadline}</p>
+                      )}
+                      {game.seriesSummary && (
+                        <p className="text-xs text-gray-600 font-roboto-condensed">{game.seriesSummary}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Away Team */}
